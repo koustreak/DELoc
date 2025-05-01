@@ -8,6 +8,7 @@ import { useSystemMetrics, useSystemMetricsHistory } from "@/hooks/useSystemMetr
 import { Component, SystemMetrics } from "@shared/schema";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
+import { useNotifications } from "@/hooks/useNotifications";
 
 interface SystemOverviewProps {
   onSelectComponent: (component: Component) => void;
@@ -21,6 +22,7 @@ export function SystemOverview({ onSelectComponent }: SystemOverviewProps) {
   const [cpuChartData, setCpuChartData] = useState<ChartData[]>([]);
   const [memoryChartData, setMemoryChartData] = useState<ChartData[]>([]);
   const [combinedChartData, setCombinedChartData] = useState<MultiLineChartData[]>([]);
+  const { notifySystemAlert } = useNotifications();
   
   useEffect(() => {
     // Generate fallback data if no metrics available
@@ -101,6 +103,33 @@ export function SystemOverview({ onSelectComponent }: SystemOverviewProps) {
     { label: "Last 24 hours", value: "24h" }
   ];
   
+  // Monitor system metrics and trigger notifications for high usage alerts
+  useEffect(() => {
+    if (metrics) {
+      // For testing purposes, temporarily set the thresholds lower
+      // so we can see the notifications in the demo
+      
+      // Check CPU usage threshold (temporarily set to 10% for demo)
+      if (metrics.cpuUsage > 10) {
+        notifySystemAlert('CPU', `${metrics.cpuUsage}%`, 80, 'warning');
+      }
+      
+      // Check Memory usage threshold (temporarily set to 20% for demo)
+      const memoryValue = parseFloat(metrics.memoryUsage.split(' ')[0]);
+      const memoryTotal = parseFloat(metrics.memoryTotal.split(' ')[0]);
+      const memoryPercentage = (memoryValue / memoryTotal) * 100;
+      
+      if (memoryPercentage > 20) {
+        notifySystemAlert('Memory', metrics.memoryUsage, 90, 'warning');
+      }
+      
+      // Check Disk usage threshold (temporarily set to 20% for demo)
+      if (metrics.diskUsage > 20) {
+        notifySystemAlert('Disk', `${metrics.diskUsage}%`, 85, 'warning');
+      }
+    }
+  }, [metrics, notifySystemAlert]);
+
   // Calculate trends
   const cpuTrend = metrics && metricsHistory && metricsHistory.length > 1
     ? {

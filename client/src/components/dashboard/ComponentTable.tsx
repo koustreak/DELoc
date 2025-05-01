@@ -4,6 +4,7 @@ import { Switch } from "@/components/ui/switch";
 import { StatusBadge } from "./StatusBadge";
 import { Icon } from "@/lib/icons";
 import { useComponentToggle } from "@/hooks/useBigDataComponents";
+import { useNotifications } from "@/hooks/useNotifications";
 
 interface ComponentTableProps {
   components: Component[];
@@ -12,11 +13,17 @@ interface ComponentTableProps {
 
 export function ComponentTable({ components, onSelect }: ComponentTableProps) {
   const toggleMutation = useComponentToggle();
+  const { notifyComponentStatus } = useNotifications();
 
   const handleToggle = (component: Component, checked: boolean) => {
     toggleMutation.mutate({
       id: component.id,
       enabled: checked
+    }, {
+      onSuccess: (updatedComponent) => {
+        const action = checked ? "Component Started" : "Component Stopped";
+        notifyComponentStatus(updatedComponent, action);
+      }
     });
   };
 

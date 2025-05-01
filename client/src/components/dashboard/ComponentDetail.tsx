@@ -18,6 +18,7 @@ import {
   useComponentRestart 
 } from "@/hooks/useBigDataComponents";
 import { useComponentMetricsHistory } from "@/hooks/useSystemMetrics";
+import { useNotifications } from "@/hooks/useNotifications";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface ComponentDetailProps {
@@ -149,18 +150,29 @@ export function ComponentDetail({ componentId, onBack }: ComponentDetailProps) {
     }
   }, [metricsHistory]);
   
+  const { notifyComponentStatus } = useNotifications();
+  
   const handleToggle = (enabled: boolean) => {
     if (component) {
       toggleMutation.mutate({
         id: component.id,
         enabled
+      }, {
+        onSuccess: (updatedComponent) => {
+          const action = enabled ? "Component Started" : "Component Stopped";
+          notifyComponentStatus(updatedComponent, action);
+        }
       });
     }
   };
   
   const handleRestart = () => {
     if (component) {
-      restartMutation.mutate(component.id);
+      restartMutation.mutate(component.id, {
+        onSuccess: (updatedComponent) => {
+          notifyComponentStatus(updatedComponent, "Component Restarted");
+        }
+      });
     }
   };
   

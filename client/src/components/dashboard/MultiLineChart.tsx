@@ -62,7 +62,8 @@ export function MultiLineChart({
           )}
         </div>
         <Separator className="mb-4" />
-        <div className="h-[240px] w-full">
+        {/* Set a fixed size container to ensure proper rendering in local environment */}
+        <div style={{ width: '100%', height: '300px', minWidth: '500px' }}>
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />

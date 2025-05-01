@@ -5,6 +5,8 @@ import { Icon } from "@/lib/icons";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Link } from "wouter";
+import { NotificationBadge } from "@/components/notifications/NotificationBadge";
 
 interface SidebarProps {
   activePage: string;
@@ -39,7 +41,7 @@ export function Sidebar({ activePage, onSelectPage, onSelectComponent }: Sidebar
         <p className="text-xs text-gray-400 mt-1">Big Data Environment Manager</p>
       </div>
       
-      <ScrollArea className="flex-1">
+      <ScrollArea className="flex-1 h-[calc(100vh-130px)] overflow-auto">
         <div className="py-2">
           <div className="px-4 py-2 text-sm font-medium text-gray-400 uppercase tracking-wider">
             System
@@ -68,27 +70,30 @@ export function Sidebar({ activePage, onSelectPage, onSelectComponent }: Sidebar
               </div>
             ))
           ) : components ? (
-            components.map((component) => (
-              <div 
-                key={component.id}
-                className={cn(
-                  "px-4 py-3 flex items-center cursor-pointer hover:bg-[#263147] transition-colors duration-200",
-                  activePage === `component-${component.id}` && "border-l-3 border-blue-400 bg-blue-500/10 text-blue-400"
-                )}
-                onClick={() => handleComponentClick(component)}
-              >
-                <Icon name={component.icon} className="mr-3 h-5 w-5" />
-                <span>{component.displayName}</span>
-                <div className="ml-auto">
-                  <span className={cn(
-                    "inline-block w-2 h-2 rounded-full",
-                    component.status === "running" && "bg-success",
-                    component.status === "warning" && "bg-warning",
-                    component.status === "stopped" && "bg-error"
-                  )}></span>
+            <div className="max-h-[calc(100vh-250px)] overflow-y-auto">
+              {components.map((component) => (
+                <div key={component.id}>
+                  <div 
+                    className={cn(
+                      "px-4 py-3 flex items-center cursor-pointer hover:bg-[#263147] transition-colors duration-200",
+                      activePage === `component-${component.id}` && "border-l-3 border-blue-400 bg-blue-500/10 text-blue-400"
+                    )}
+                    onClick={() => handleComponentClick(component)}
+                  >
+                    <Icon name={component.icon} className="mr-3 h-5 w-5 flex-shrink-0" />
+                    <span className="truncate">{component.displayName}</span>
+                    <div className="ml-auto pl-2 flex-shrink-0">
+                      <span className={cn(
+                        "inline-block w-2 h-2 rounded-full",
+                        component.status === "running" && "bg-success",
+                        component.status === "warning" && "bg-warning",
+                        component.status === "stopped" && "bg-error"
+                      )}></span>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            ))
+              ))}
+            </div>
           ) : (
             <div className="px-4 py-3 text-text-secondary">No components found</div>
           )}
@@ -96,10 +101,15 @@ export function Sidebar({ activePage, onSelectPage, onSelectComponent }: Sidebar
       </ScrollArea>
       
       <div className="mt-auto p-4 border-t border-[#2d3a50]">
-        <div className="flex items-center text-gray-400">
-          <Icon name="user" className="mr-2 h-5 w-5" />
-          <span className="text-sm">Admin User</span>
-        </div>
+        <Link href="/notifications">
+          <div 
+            className="flex items-center cursor-pointer hover:text-blue-400 transition-colors duration-200"
+          >
+            <Icon name="bell" className="mr-2 h-5 w-5" />
+            <span className="text-sm">Notifications</span>
+            <NotificationBadge />
+          </div>
+        </Link>
       </div>
     </aside>
   );
