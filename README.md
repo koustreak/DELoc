@@ -1,5 +1,7 @@
 # DELoc
 
+![Screenshot from 2025-05-01 02-30-50](https://github.com/user-attachments/assets/543498f4-fe6b-4111-a8da-c0b3f3ed947f)
+
 **DELoc** is an open-source local data engineering toolkit designed to help you build, manage, and experiment with high-performance data pipelines on your own machine. DELoc provides a unified UI and bundles all major big data tools in a single, easy-to-use Docker-based environment.
 
 ## Features
