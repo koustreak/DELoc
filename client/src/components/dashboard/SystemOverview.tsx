@@ -142,7 +142,7 @@ export function SystemOverview({ onSelectComponent }: SystemOverviewProps) {
     <div className="p-6">
       <div className="mb-6">
         <h2 className="text-3xl font-bold gradient-text">System Overview</h2>
-        <p className="text-text-secondary mt-2">Monitor and manage your entire big data environment</p>
+        <p className="text-text-secondary mt-2">Monitor and manage your data engineering environment</p>
       </div>
       
       {/* Summary Cards */}
@@ -192,65 +192,6 @@ export function SystemOverview({ onSelectComponent }: SystemOverviewProps) {
         ) : (
           <div>Failed to load metrics</div>
         )}
-      </div>
-      
-      {/* Gauge Charts */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <ResourceChart
-          title="CPU Load"
-          data={[]}
-          type="gauge"
-          gaugeValue={metrics?.cpuUsage || 0}
-          gaugeMax={100}
-          color="hsl(var(--primary))"
-          yAxisFormatter={(value) => `${value}%`}
-        />
-        
-        <ResourceChart
-          title="Memory Usage"
-          data={[]}
-          type="gauge"
-          gaugeValue={parseFloat(metrics?.memoryUsage?.split(' ')[0] || '0')}
-          gaugeMax={parseFloat(metrics?.memoryTotal?.split(' ')[0] || '16')}
-          color="hsl(var(--secondary))"
-          yAxisFormatter={(value) => `${value} GB`}
-        />
-        
-        <ResourceChart
-          title="Storage Usage"
-          data={[]}
-          type="gauge"
-          gaugeValue={metrics?.diskUsage || 0}
-          gaugeMax={100}
-          color="hsl(var(--success))"
-          yAxisFormatter={(value) => `${value}%`}
-        />
-        
-        <ResourceChart
-          title="Network Load"
-          data={[]}
-          type="gauge"
-          gaugeValue={45}
-          gaugeMax={100}
-          color="hsl(var(--info))"
-          yAxisFormatter={(value) => `${value}%`}
-        />
-      </div>
-      
-      {/* CPU and Memory Usage Chart */}
-      <div className="mb-6">
-        <div>
-          {/* Combined CPU and Memory Chart */}
-          {combinedChartData.length > 0 ? (
-            <MultiLineChart
-              title="CPU and Memory Usage Detail"
-              data={combinedChartData}
-              timeRanges={timeRanges}
-            />
-          ) : (
-            <Skeleton className="h-[330px] w-full" />
-          )}
-        </div>
       </div>
       
       {/* Network and Storage Charts */}

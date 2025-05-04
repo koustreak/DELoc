@@ -112,7 +112,6 @@ export function NotificationsPage() {
                 <TableHead>Message</TableHead>
                 <TableHead className="w-[180px]">Time</TableHead>
                 <TableHead className="w-[100px]">Status</TableHead>
-                <TableHead className="w-[120px] text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -139,26 +138,6 @@ export function NotificationsPage() {
                     ) : (
                       <Badge className="bg-primary-500 bg-opacity-10 text-primary">Unread</Badge>
                     )}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      {!notification.isRead && (
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="h-8 w-8"
-                        >
-                          <Icon name="check" className="h-4 w-4" />
-                        </Button>
-                      )}
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-8 w-8 text-text-secondary hover:text-error"
-                      >
-                        <Icon name="trash" className="h-4 w-4" />
-                      </Button>
-                    </div>
                   </TableCell>
                 </TableRow>
               ))}

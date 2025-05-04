@@ -176,6 +176,11 @@ export function ComponentDetail({ componentId, onBack }: ComponentDetailProps) {
     }
   };
   
+  // Function to remove "Apache" prefix from component names
+  const formatComponentName = (name: string) => {
+    return name?.replace(/^Apache\s+/i, '');
+  };
+  
   if (isLoading) {
     return (
       <div className="p-6">
@@ -203,7 +208,7 @@ export function ComponentDetail({ componentId, onBack }: ComponentDetailProps) {
         <div>
           <div className="flex items-center">
             <Icon name={component.icon} className="h-7 w-7 mr-3 text-primary" />
-            <h2 className="text-3xl font-bold gradient-text">{component.displayName}</h2>
+            <h2 className="text-3xl font-bold gradient-text">{formatComponentName(component.displayName)}</h2>
             <StatusBadge status={component.status} className="ml-3" />
           </div>
           <p className="text-text-secondary mt-2">{component.description}</p>

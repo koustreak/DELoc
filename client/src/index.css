@@ -4,21 +4,21 @@
 
 :root {
   /* Material Dashboard colors */
-  --background: 0 0% 100%;
+  --background: 210 20% 98%;
   --foreground: 20 14.3% 4.1%;
-  --muted: 60 4.8% 95.9%;
+  --muted: 210 20% 96%;
   --muted-foreground: 25 5.3% 44.7%;
-  --popover: 0 0% 100%;
+  --popover: 210 20% 98%;
   --popover-foreground: 20 14.3% 4.1%;
-  --card: 0 0% 100%;
+  --card: 224 42% 89%;
   --card-foreground: 20 14.3% 4.1%;
-  --border: 20 5.9% 90%;
-  --input: 20 5.9% 90%;
+  --border: 215 20% 90%;
+  --input: 215 20% 90%;
   --primary: 262 83% 58%; /* Purple/Indigo */
   --primary-foreground: 211 100% 99%;
   --secondary: 199 98% 48%; /* Cyan */
   --secondary-foreground: 210 40% 98%;
-  --accent: 60 4.8% 95.9%;
+  --accent: 210 20% 96%;
   --accent-foreground: 24 9.8% 10%;
   --destructive: 0 84.2% 60.2%;
   --destructive-foreground: 60 9.1% 97.8%;
@@ -28,7 +28,7 @@
   --error: 4 90% 58%; /* Red */
   --warning: 36 100% 50%; /* Amber */
   --info: 207 90% 54%; /* Blue */
-  --surface: 0 0% 100%;
+  --surface: 210 20% 98%;
   --text-primary: 240 10% 3.9%;
   --text-secondary: 240 3.8% 46.1%;
 }
@@ -81,6 +81,16 @@
   .shadow-card {
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   }
+  
+  /* Hide scrollbar but keep scrolling functionality */
+  .no-scrollbar {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;     /* Firefox */
+  }
+  
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;             /* Chrome, Safari and Opera */
+  }
 }
 
 /* Material-like animations */
@@ -95,15 +105,15 @@
 
 /* Material Design elevated cards */
 .elevated-card {
-  background: white;
+  background: #dadfed;
   border-radius: var(--radius);
-  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.16);
+  box-shadow: 0 3px 14px 0 rgba(0, 0, 0, 0.12), 0 1px 3px rgba(0, 0, 0, 0.08);
   overflow: hidden;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .elevated-card:hover {
-  box-shadow: 0 8px 26px 0 rgba(0, 0, 0, 0.2);
+  box-shadow: 0 8px 30px 0 rgba(0, 0, 0, 0.15);
   transform: translateY(-4px);
 }
 

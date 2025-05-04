@@ -14,19 +14,24 @@ interface ComponentTableProps {
 export function ComponentTable({ components, onSelect }: ComponentTableProps) {
   const toggleMutation = useComponentToggle();
   const { notifyComponentStatus } = useNotifications();
-
-  const handleToggle = (component: Component, checked: boolean) => {
-    toggleMutation.mutate({
-      id: component.id,
-      enabled: checked
-    }, {
-      onSuccess: (updatedComponent) => {
-        const action = checked ? "Component Started" : "Component Stopped";
-        notifyComponentStatus(updatedComponent, action);
-      }
-    });
+  
+  // Function to remove "Apache" prefix from component names
+  const formatComponentName = (name: string) => {
+    return name.replace(/^Apache\s+/i, '');
   };
-
+  
+  const handleToggle = (checked: boolean, component: Component) => {
+    toggleMutation.mutate(
+      { id: component.id, enabled: checked },
+      {
+        onSuccess: (updatedComponent) => {
+          const action = checked ? "Component Started" : "Component Stopped";
+          notifyComponentStatus(updatedComponent, checked ? "started" : "stopped");
+        }
+      }
+    );
+  };
+  
   return (
     <div className="overflow-x-auto bg-surface rounded-lg shadow">
       <Table>
@@ -62,7 +67,7 @@ export function ComponentTable({ components, onSelect }: ComponentTableProps) {
                     component.status === "warning" ? "text-yellow-600" :
                     component.status === "error" ? "text-red-600" :
                     "text-text-primary"
-                  }`}>{component.displayName}</span>
+                  }`}>{formatComponentName(component.displayName)}</span>
                 </div>
               </TableCell>
               <TableCell>
@@ -85,7 +90,8 @@ export function ComponentTable({ components, onSelect }: ComponentTableProps) {
               <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                 <Switch
                   checked={component.enabled}
-                  onCheckedChange={(checked) => handleToggle(component, checked)}
+                  onCheckedChange={(checked) => handleToggle(checked, component)}
+                  disabled={toggleMutation.isPending}
                 />
               </TableCell>
             </TableRow>
