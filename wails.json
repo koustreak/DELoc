@@ -1,0 +1,14 @@
+{
+  "name": "DELoc",
+  "author": {
+    "name": "koushik"
+  },
+  "description": "Data Engineering in Local - Desktop App",
+  "outputfilename": "deloc",
+  "frontend": {
+    "dir": "frontend",
+    "install": "npm install",
+    "build": "npm run build"
+  },
+  "platform": "all"
+}
