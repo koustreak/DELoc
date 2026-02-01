@@ -1,4 +1,9 @@
-# DELoc CLI - Data Engineering in Local 🚀
+
+<p align="left">
+  <img src="assets/deloc-logo.svg" alt="DeLoc Logo" height="48" style="vertical-align:middle; margin-right:12px;"/>
+</p>
+
+# DELoc - Data Engineering in Local 🚀
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Version](https://img.shields.io/badge/version-1.0.0-green.svg)](https://github.com/your-username/deloc-cli)
@@ -7,7 +12,16 @@
 [![Size](https://img.shields.io/badge/binary%20size-<5MB-brightgreen.svg)](https://github.com/your-username/deloc-cli)
 [![Performance](https://img.shields.io/badge/ultra%20lightweight-⚡-yellow.svg)](https://github.com/your-username/deloc-cli)
 
-DELoc (Data Engineering in Local) is the **world's most lightweight CLI tool** that streamlines the setup of complete data engineering environments on your local machine. Designed with extreme efficiency in mind, DELoc delivers enterprise-grade data engineering capabilities with minimal resource footprint. With support for both Docker and Kubernetes infrastructures, DELoc enables you to quickly deploy and manage popular data engineering tools including Apache Kafka, Apache Spark, MinIO, Apache Pinot, Cassandra, and many more - all while consuming minimal system resources.
+
+DELoc (Data Engineering in Local) is a next-generation platform for local data engineering, offering both a super-lightweight CLI and a modern lightweight GUI. DELoc uses Docker to set up complete big data environments—including databases, Hadoop, and a wide range of big data services—on your local machine with minimal resource usage.
+
+**Key highlights:**
+- **Dual Interface:** Choose between a lightning-fast CLI or a user-friendly GUI for managing your data engineering stack.
+- **Big Data in Minutes:** Instantly deploy and manage popular big data tools (Kafka, Spark, Hadoop, MinIO, Pinot, Cassandra, and more) using Docker.
+- **Ready-to-Use Editors:** Access pre-configured development environments with VS Code, Zeppelin, and JupyterLab—each with Python, Java, and Scala ready to go.
+- **Zero Hassle:** No manual setup, no dependency hell—just run, code, and analyze.
+
+Whether you’re a data engineer, analyst, or student, DELoc makes it effortless to experiment, prototype, and learn with real big data tools—right on your laptop.
 
 ## 🎯 Features
 
