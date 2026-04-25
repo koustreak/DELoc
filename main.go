@@ -18,11 +18,13 @@ var icon []byte
 
 func main() {
 	err := wails.Run(&options.App{
-		Title:     "DELoc",
-		Width:     1024,
-		Height:    768,
-		MinWidth:  800,
-		MinHeight: 600,
+		Title:            "DELoc",
+		Width:            1280,
+		Height:           800,
+		MinWidth:         800,
+		MinHeight:        600,
+		Frameless:        true,
+		WindowStartState: options.Normal,
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},
