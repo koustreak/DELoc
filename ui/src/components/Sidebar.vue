@@ -1,21 +1,19 @@
 <template>
-  <aside class="w-64 bg-slate-800 text-slate-300 flex flex-col border-r border-slate-700/50 flex-shrink-0">
-    <!-- App Logo Area for Sidebar (Optional if using standard TitleBar, but good for branding below it) -->
-    
-    <nav class="flex-1 py-4 space-y-1 overflow-y-auto">
-      <ul class="space-y-1">
+  <aside class="w-48 bg-slate-800 text-slate-300 flex flex-col border-r border-slate-700/50 flex-shrink-0">
+    <nav class="flex-1 py-3 space-y-0.5 overflow-y-auto">
+      <ul class="space-y-0.5">
         <li v-for="item in menuItems" :key="item.name">
           <a
             href="#"
-            @click.prevent="active = item.name"
+            @click.prevent="active = item.name; $emit('change-tab', item.name)"
             :class="[
-              'flex items-center gap-3 px-6 py-3 font-medium transition-colors border-l-4',
+              'flex items-center gap-2.5 px-4 py-2 text-xs font-medium transition-colors border-l-3',
               active === item.name 
                 ? 'bg-blue-600/20 text-white border-blue-500' 
                 : 'border-transparent hover:bg-slate-700/50 hover:text-white'
             ]"
           >
-            <component :is="item.icon" class="w-5 h-5 opacity-80" />
+            <component :is="item.icon" class="w-4 h-4 opacity-80" />
             <span>{{ item.name }}</span>
           </a>
         </li>
@@ -27,6 +25,7 @@
 <script setup>
 import { ref } from 'vue'
 import { 
+
   Home, 
   Layers, 
   Database, 

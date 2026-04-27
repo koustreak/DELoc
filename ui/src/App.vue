@@ -6,20 +6,30 @@
     <!-- Application Body -->
     <div class="flex-1 flex overflow-hidden">
       <!-- Left Navigation Menu -->
-      <Sidebar />
+      <Sidebar @change-tab="tab => currentTab = tab" />
       
-      <!-- Main Content Route Area -->
       <main class="flex-1 overflow-hidden">
-        <Dashboard />
+        <Dashboard v-if="currentTab === 'Dashboard'" />
+        <Services v-else-if="currentTab === 'Services'" />
+        <Stacks v-else-if="currentTab === 'Stacks'" />
+        <Volumes v-else-if="currentTab === 'Volumes'" />
+        <Plugins v-else-if="currentTab === 'Plugins'" />
       </main>
     </div>
   </div>
 </template>
 
 <script setup>
+import { ref } from 'vue'
 import TitleBar from './components/TitleBar.vue'
 import Sidebar from './components/Sidebar.vue'
 import Dashboard from './components/Dashboard.vue'
+import Services from './components/Services.vue'
+import Stacks from './components/Stacks.vue'
+import Volumes from './components/Volumes.vue'
+import Plugins from './components/Plugins.vue'
+
+const currentTab = ref('Dashboard')
 </script>
 
 <style>

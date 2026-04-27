@@ -90,9 +90,8 @@ onMounted(() => {
   gap: 10px;
   padding-left: 14px;
   flex: 1;
-  -webkit-app-region: drag;
-  /* Makes this area draggable to move the window */
-  app-region: drag;
+  /* Wails v2 specific dragging property */
+  --wails-draggable: drag;
 }
 
 .titlebar-logo {
@@ -113,8 +112,7 @@ onMounted(() => {
   display: flex;
   align-items: center;
   height: 100%;
-  -webkit-app-region: no-drag;
-  app-region: no-drag;
+  --wails-draggable: no-drag;
 }
 
 .ctrl-btn {
