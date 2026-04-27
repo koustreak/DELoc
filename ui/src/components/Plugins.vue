@@ -26,9 +26,9 @@
           <div class="w-full md:w-[260px] border-r border-slate-200/80 bg-[#fbfcfd] p-5 flex flex-col gap-6 flex-shrink-0">
             <div class="space-y-4 text-[13px] text-slate-700 font-medium">
               <div><span class="text-slate-500 mr-1">Java Version:</span> OpenJDK 11</div>
+              <div><span class="text-slate-500 mr-1">Java Path:</span> <br><span class="font-mono text-[11px] text-slate-800">/opt/jdk-11/</span></div>
               <div><span class="text-slate-500 mr-1">Scala Version:</span> 2.12.18</div>
-              <div><span class="text-slate-500 mr-1">Installed Path:</span> <br><span class="font-mono text-[11px] text-slate-800">/opt/jdk-11/</span></div>
-              <div><span class="text-slate-500 mr-1">Installed On:</span> 4/24/24</div>
+              <div><span class="text-slate-500 mr-1">Scala Path:</span> <br><span class="font-mono text-[11px] text-slate-800">/opt/scala-2.12.18/</span></div>
             </div>
             <button class="w-full px-4 py-2.5 bg-[#3c78d8] hover:bg-blue-600 text-white rounded shadow text-[13px] font-medium transition-colors border border-[#2b64c0] active:scale-95">
               Update Environment
@@ -50,20 +50,20 @@
               <table class="w-full text-left text-[12px] whitespace-nowrap">
                 <thead class="bg-slate-50/50 text-slate-500 border-b border-slate-200 font-medium sticky top-0 z-10">
                   <tr>
-                    <th class="px-4 py-2.5">Name</th>
-                    <th class="px-4 py-2.5">Path</th>
-                    <th class="px-4 py-2.5">Size</th>
-                    <th class="px-4 py-2.5">Version</th>
-                    <th class="px-4 py-2.5 text-center w-12"></th>
+                    <th class="px-4 py-1.5">Name</th>
+                    <th class="px-4 py-1.5">Path</th>
+                    <th class="px-4 py-1.5">Size</th>
+                    <th class="px-4 py-1.5">Version</th>
+                    <th class="px-4 py-1.5 text-center w-12"></th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100">
                   <tr v-for="jar in paginatedJava" :key="jar.name" class="hover:bg-slate-50/80 transition-colors">
-                    <td class="px-4 py-2.5 font-medium text-slate-700 truncate max-w-[180px]">{{ jar.name }}</td>
-                    <td class="px-4 py-2.5 font-mono text-[10px] text-slate-500 truncate max-w-[200px]">{{ jar.path }}</td>
-                    <td class="px-4 py-2.5 text-slate-600 text-[11px]">{{ jar.size }}</td>
-                    <td class="px-4 py-2.5 text-slate-600 text-[11px]">{{ jar.version }}</td>
-                    <td class="px-4 py-2.5 flex justify-center">
+                    <td class="px-4 py-1.5 font-medium text-slate-700 truncate max-w-[180px]">{{ jar.name }}</td>
+                    <td class="px-4 py-1.5 font-mono text-[10px] text-slate-500 truncate max-w-[200px]">{{ jar.path }}</td>
+                    <td class="px-4 py-1.5 text-slate-600 text-[11px]">{{ jar.size }}</td>
+                    <td class="px-4 py-1.5 text-slate-600 text-[11px]">{{ jar.version }}</td>
+                    <td class="px-4 py-1.5 flex justify-center">
                       <button class="p-1 px-1.5 bg-[#d85858] hover:bg-red-600 text-white rounded shadow-sm border border-red-700 transition-colors">
                         <Trash2 class="w-3.5 h-3.5" />
                       </button>
@@ -121,7 +121,6 @@
               <div><span class="text-slate-500 mr-1">Env Name:</span> DELoc</div>
               <div><span class="text-slate-500 mr-1">Version:</span> Python 3.9</div>
               <div><span class="text-slate-500 mr-1">Environment Path:</span> <br><code class="text-[11px] text-slate-800 bg-slate-200/50 px-1 py-0.5 rounded">/opt/my_env/</code></div>
-              <div><span class="text-slate-500 mr-1">Installed On:</span> 4/24/24</div>
             </div>
             <button class="w-full px-4 py-2.5 bg-[#3c78d8] hover:bg-blue-600 text-white rounded shadow text-[13px] font-medium transition-colors border border-[#2b64c0] active:scale-95">
               Update Environment
@@ -143,18 +142,18 @@
               <table class="w-full text-left text-[12px] whitespace-nowrap">
                 <thead class="bg-slate-50/50 text-slate-500 border-b border-slate-200 font-medium sticky top-0 z-10">
                   <tr>
-                    <th class="px-4 py-2.5 w-1/2">Name</th>
-                    <th class="px-4 py-2.5">Size</th>
-                    <th class="px-4 py-2.5">Version</th>
-                    <th class="px-4 py-2.5 text-center w-20">Delete</th>
+                    <th class="px-4 py-1.5 w-1/2">Name</th>
+                    <th class="px-4 py-1.5">Size</th>
+                    <th class="px-4 py-1.5">Version</th>
+                    <th class="px-4 py-1.5 text-center w-20">Delete</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100">
                   <tr v-for="pkg in paginatedPython" :key="pkg.name" class="hover:bg-slate-50/80 transition-colors">
-                    <td class="px-4 py-2.5 font-medium text-slate-700 truncate max-w-[300px]">{{ pkg.name }}</td>
-                    <td class="px-4 py-2.5 text-slate-600 text-[11px]">{{ pkg.size }}</td>
-                    <td class="px-4 py-2.5 text-slate-600 text-[11px]">{{ pkg.version }}</td>
-                    <td class="px-4 py-2.5">
+                    <td class="px-4 py-1.5 font-medium text-slate-700 truncate max-w-[300px]">{{ pkg.name }}</td>
+                    <td class="px-4 py-1.5 text-slate-600 text-[11px]">{{ pkg.size }}</td>
+                    <td class="px-4 py-1.5 text-slate-600 text-[11px]">{{ pkg.version }}</td>
+                    <td class="px-4 py-1.5">
                       <div class="flex items-center justify-center gap-1.5">
                          <button class="p-1 px-1.5 bg-[#3c78d8] hover:bg-blue-600 text-white rounded shadow-sm border border-[#2b64c0] transition-colors"><Folder class="w-3.5 h-3.5" /></button>
                          <button class="p-1 px-1.5 bg-[#d85858] hover:bg-red-600 text-white rounded shadow-sm border border-red-700 transition-colors"><Trash2 class="w-3.5 h-3.5" /></button>
