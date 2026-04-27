@@ -1,5 +1,5 @@
 <template>
-  <aside class="w-48 bg-slate-800 text-slate-300 flex flex-col border-r border-slate-700/50 flex-shrink-0">
+  <aside class="w-48 bg-slate-800 dark:bg-[#070707] text-slate-300 dark:text-slate-400 flex flex-col border-r border-slate-700/50 dark:border-slate-800/80 flex-shrink-0 transition-colors duration-300">
     <nav class="flex-1 py-3 space-y-0.5 overflow-y-auto">
       <ul class="space-y-0.5">
         <li v-for="item in menuItems" :key="item.name">
@@ -42,6 +42,6 @@ const menuItems = [
   { name: 'Stacks', icon: Database },
   { name: 'Volumes', icon: HardDrive },
   { name: 'Plugins', icon: Puzzle },
-  { name: 'Notebook', icon: BookOpen },
+  { name: 'Notebooks', icon: BookOpen },
 ]
 </script>

@@ -6,7 +6,7 @@
       <!-- Top Stats Row -->
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <!-- CPU Usage -->
-        <div class="bg-white rounded-lg border border-slate-200 shadow-sm p-3.5 flex flex-col justify-between">
+        <div class="bg-gradient-to-b from-white to-[#f4f6f9] rounded-lg border border-slate-300/70 shadow-[inset_0_1px_0_rgba(255,255,255,1),0_2px_4px_-1px_rgba(0,0,0,0.03),0_4px_6px_-2px_rgba(0,0,0,0.03)] p-3.5 flex flex-col justify-between transition-shadow hover:shadow-[inset_0_1px_0_rgba(255,255,255,1),0_4px_8px_-2px_rgba(0,0,0,0.05)]">
           <div class="flex items-center gap-2 mb-3 text-slate-700 font-semibold border-b border-slate-100 pb-1.5 text-xs">
             <Activity class="w-4 h-4 text-emerald-500" />
             <h3>CPU Usage</h3>
@@ -23,7 +23,7 @@
         </div>
 
         <!-- Memory Usage -->
-        <div class="bg-white rounded-lg border border-slate-200 shadow-sm p-3.5 flex flex-col justify-between">
+        <div class="bg-gradient-to-b from-white to-[#f4f6f9] rounded-lg border border-slate-300/70 shadow-[inset_0_1px_0_rgba(255,255,255,1),0_2px_4px_-1px_rgba(0,0,0,0.03),0_4px_6px_-2px_rgba(0,0,0,0.03)] p-3.5 flex flex-col justify-between transition-shadow hover:shadow-[inset_0_1px_0_rgba(255,255,255,1),0_4px_8px_-2px_rgba(0,0,0,0.05)]">
           <div class="flex items-center gap-2 mb-3 text-slate-700 font-semibold border-b border-slate-100 pb-1.5 text-xs">
             <Server class="w-4 h-4 text-blue-500" />
             <h3>Memory Usage</h3>
@@ -40,7 +40,7 @@
         </div>
 
         <!-- DELoc Containers -->
-        <div class="bg-white rounded-lg border border-slate-200 shadow-sm p-3.5 flex flex-col justify-between">
+        <div class="bg-gradient-to-b from-white to-[#f4f6f9] rounded-lg border border-slate-300/70 shadow-[inset_0_1px_0_rgba(255,255,255,1),0_2px_4px_-1px_rgba(0,0,0,0.03),0_4px_6px_-2px_rgba(0,0,0,0.03)] p-3.5 flex flex-col justify-between transition-shadow hover:shadow-[inset_0_1px_0_rgba(255,255,255,1),0_4px_8px_-2px_rgba(0,0,0,0.05)]">
           <div class="flex items-center gap-2 mb-3 text-slate-700 font-semibold border-b border-slate-100 pb-1.5 text-xs">
             <Box class="w-4 h-4 text-orange-500" />
             <h3>DELoc Containers</h3>
@@ -56,7 +56,7 @@
       </div>
 
       <!-- Running Services Table -->
-      <div class="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden flex flex-col" style="min-height: 300px;">
+      <div class="bg-gradient-to-b from-white to-[#f4f6f9] rounded-lg border border-slate-300 shadow-[inset_0_1px_0_rgba(255,255,255,1),0_2px_4px_-1px_rgba(0,0,0,0.03),0_4px_6px_-2px_rgba(0,0,0,0.03)] overflow-hidden flex flex-col" style="min-height: 300px;">
         <!-- Table Header with Search & Pagination -->
         <div class="px-3 py-2 bg-slate-50 border-b border-slate-200 flex items-center justify-between gap-3">
           <div class="flex items-center gap-2 font-semibold text-slate-700 text-xs">

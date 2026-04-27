@@ -1,29 +1,30 @@
 <template>
   <div class="flex flex-col h-full bg-slate-50/50">
-    <!-- Top Header & Search Area -->
-    <div class="px-6 py-4 border-b border-slate-200/80 bg-slate-100/50 sticky top-0 z-10 backdrop-blur-sm shadow-sm">
-      <div class="relative w-full max-w-2xl bg-white rounded shadow-sm border border-slate-200">
-        <Search class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-        <input 
-          v-model="searchQuery"
-          type="text" 
-          placeholder="Search services..." 
-          class="w-full pl-9 pr-4 py-2.5 text-sm bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500/20 rounded text-slate-700 placeholder-slate-400 transition-all font-medium" 
-        />
-      </div>
-    </div>
-
     <!-- Main Content Area -->
     <main class="flex-1 overflow-y-auto p-6">
-      <div class="flex items-center gap-2 font-semibold text-slate-700 mb-6 text-sm">
-        <Layers class="w-4 h-4 text-slate-800" />
-        Services
+
+      <!-- Compact Header with Inline Search -->
+      <div class="flex items-center justify-between mb-6">
+        <div class="flex items-center gap-2 font-semibold text-slate-700 text-sm tracking-tight">
+          <Layers class="w-4 h-4 text-slate-800" />
+          Services
+        </div>
+
+        <div class="relative w-full max-w-sm drop-shadow-sm">
+          <Search class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <input 
+            v-model="searchQuery"
+            type="text" 
+            placeholder="Search services..." 
+            class="w-full pl-9 pr-4 py-2 text-xs bg-white border border-slate-200/80 rounded focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-slate-700 placeholder-slate-400 transition-all font-medium" 
+          />
+        </div>
       </div>
 
       <!-- Services Grid -->
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-5">
         
-        <div v-for="service in filteredServices" :key="service.name" class="bg-white rounded-md border border-slate-200 shadow-md flex flex-col p-4 transition-all hover:shadow-lg hover:border-blue-300 group">
+        <div v-for="service in filteredServices" :key="service.name" class="bg-gradient-to-b from-white to-[#f4f6f9] rounded-md border border-slate-300 shadow-[inset_0_1px_0_rgba(255,255,255,1),0_4px_6px_-2px_rgba(0,0,0,0.05),0_8px_12px_-3px_rgba(0,0,0,0.03)] flex flex-col p-4 transition-all hover:-translate-y-1 hover:shadow-[inset_0_1px_0_rgba(255,255,255,1),0_8px_12px_-3px_rgba(60,120,216,0.15)] group">
           <!-- Logo & Name -->
           <div class="flex items-end gap-2.5 mb-3 text-slate-800 border-b border-slate-50/0 pb-2">
             <component :is="service.icon" :class="['w-8 h-8 drop-shadow-sm', service.color]" />

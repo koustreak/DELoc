@@ -7,14 +7,52 @@
     </div>
 
     <!-- Window Controls -->
-    <div class="titlebar-controls">
+    <div class="titlebar-controls flex items-center">
       <button class="flex items-center justify-center w-10 h-10 px-2.5 text-white/70 hover:text-white hover:bg-white/10 transition-colors" title="Notifications">
         <Bell class="w-4 h-4" />
       </button>
-      <button class="flex items-center justify-center w-10 h-10 px-2.5 text-white/70 hover:text-white hover:bg-white/10 transition-colors" title="Settings">
-        <Settings class="w-4 h-4" />
-      </button>
-      <button class="ctrl-btn minimize" @click="minimise" title="Minimize">
+
+      <!-- Settings Dropdown Container -->
+      <div class="relative flex items-center h-full">
+        <!-- Dark overlay to catch outside clicks and close popover -->
+        <div v-if="showSettingsMenu" @click="showSettingsMenu = false" class="fixed inset-0 z-[90] cursor-default bg-transparent"></div>
+
+        <button @click="showSettingsMenu = !showSettingsMenu" class="relative z-[95] flex items-center justify-center w-10 h-10 px-2.5 text-white/70 hover:text-white hover:bg-white/10 transition-colors" :class="{ 'bg-white/10 text-white': showSettingsMenu }" title="Settings">
+          <Settings class="w-4 h-4" />
+        </button>
+
+        <!-- The Settings Menu -->
+        <div v-if="showSettingsMenu" class="absolute top-[40px] right-0 w-80 bg-white rounded-bl-md rounded-br-md shadow-[0_10px_25px_-5px_rgba(0,0,0,0.3)] border border-slate-200 z-[100] text-slate-800 overflow-hidden flex flex-col font-sans cursor-default">
+          
+
+
+          <!-- Networking -->
+          <div class="p-3.5 border-b border-slate-100 flex flex-col gap-2">
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Data & Networking</span>
+            <div class="flex flex-col gap-1.5">
+              <label class="text-[11px] text-slate-600 font-medium">Archive Target Path</label>
+              <input type="text" value="/home/DELoc/archives" class="w-full bg-slate-50 border border-slate-200 rounded px-2.5 py-1.5 text-xs font-mono text-slate-600 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" />
+              
+              <label class="text-[11px] text-slate-600 font-medium mt-1">HTTP Proxy</label>
+              <input type="text" placeholder="http://proxy.corp.com:8080" class="w-full bg-slate-50 border border-slate-200 rounded px-2.5 py-1.5 text-xs font-mono text-slate-600 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" />
+            </div>
+          </div>
+
+          <!-- Extensions -->
+          <div class="p-3.5 flex flex-col gap-2 bg-slate-50/50">
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Extension Paths</span>
+            <div class="flex flex-col gap-1.5">
+              <label class="text-[11px] text-slate-600 font-medium">Java Home</label>
+              <input type="text" value="/opt/jdk-11/" class="w-full bg-white border border-slate-200 rounded px-2.5 py-1.5 text-xs font-mono text-slate-600 outline-none shadow-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" />
+              
+              <label class="text-[11px] text-slate-600 font-medium mt-1">Python Base</label>
+              <input type="text" value="/opt/my_env/" class="w-full bg-white border border-slate-200 rounded px-2.5 py-1.5 text-xs font-mono text-slate-600 outline-none shadow-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <button class="ctrl-btn minimize ml-2" @click="minimise" title="Minimize">
         <svg width="10" height="2" viewBox="0 0 10 2"><rect width="10" height="2" fill="currentColor"/></svg>
       </button>
       <button class="ctrl-btn maximise" @click="toggleMaximise" :title="isMaximized ? 'Restore' : 'Maximize'">
@@ -38,10 +76,21 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { Settings, Bell } from 'lucide-vue-next'
+import { Settings, Bell, Sun, Moon, Monitor } from 'lucide-vue-next'
 import { WindowMinimise, WindowMaximise, WindowUnmaximise, WindowIsMaximised, Quit } from '../../wailsjs/runtime/runtime.js'
 
 const isMaximized = ref(false)
+const showSettingsMenu = ref(false)
+const currentTheme = ref('light')
+
+function setTheme(theme) {
+  currentTheme.value = theme
+  if (theme === 'dark') {
+    document.documentElement.classList.add('dark')
+  } else {
+    document.documentElement.classList.remove('dark')
+  }
+}
 
 async function checkMaximized() {
   isMaximized.value = await WindowIsMaximised()

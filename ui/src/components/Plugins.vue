@@ -80,15 +80,16 @@
               <div class="flex items-center gap-1 font-medium select-none">
                  <button @click="javaPage--" :disabled="javaPage === 1" class="hidden md:flex px-2 py-1.5 items-center gap-1 hover:text-slate-900 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">Previous</button>
                  <button @click="javaPage--" :disabled="javaPage === 1" :class="['p-1.5 rounded border border-slate-300 bg-white hover:bg-slate-50 transition-colors', javaPage===1?'opacity-50 cursor-not-allowed':'']"><ChevronLeft class="w-3.5 h-3.5 text-slate-600"/></button>
-                 
-                 <!-- Mocking exactly the page numbers from image visually for the active state -->
-                 <span class="px-2.5 py-1 rounded bg-[#3c78d8] text-white shadow-sm border border-[#2b64c0]">1</span>
-                 <span class="px-2 text-slate-500 hidden sm:inline">2</span>
-                 <span class="px-2 text-slate-500 hidden sm:inline">3</span>
-                 <span class="px-2 text-slate-400 hidden sm:inline">...</span>
-                 <span class="px-2 text-slate-500 hidden sm:inline">4</span>
-
-                 <button @click="javaPage++" :disabled="javaPage >= javaTotalPages" :class="['flex items-center gap-1 px-3 py-1.5 rounded border border-[#2b64c0] bg-[#3c78d8] hover:bg-blue-600 text-white shadow-sm transition-colors ml-1', javaPage>=javaTotalPages?'opacity-80 cursor-not-allowed':'']">Next <ChevronRight class="w-3.5 h-3.5"/></button>
+                 <button 
+                   v-for="p in javaTotalPages" 
+                   :key="p" 
+                   @click="javaPage = p"
+                   :class="[
+                     'px-2.5 py-1 rounded transition-colors hidden sm:inline',
+                     javaPage === p ? 'bg-[#3c78d8] text-white shadow-sm border border-[#2b64c0]' : 'text-slate-500 hover:bg-slate-200'
+                   ]">
+                   {{ p }}
+                 </button>                 <button @click="javaPage++" :disabled="javaPage >= javaTotalPages" :class="['flex items-center gap-1 px-3 py-1.5 rounded border border-[#2b64c0] bg-[#3c78d8] hover:bg-blue-600 text-white shadow-sm transition-colors ml-1', javaPage>=javaTotalPages?'opacity-80 cursor-not-allowed':'']">Next <ChevronRight class="w-3.5 h-3.5"/></button>
               </div>
             </div>
           </div>
@@ -154,8 +155,7 @@
                     <td class="px-4 py-1.5 text-slate-600 text-[11px]">{{ pkg.size }}</td>
                     <td class="px-4 py-1.5 text-slate-600 text-[11px]">{{ pkg.version }}</td>
                     <td class="px-4 py-1.5">
-                      <div class="flex items-center justify-center gap-1.5">
-                         <button class="p-1 px-1.5 bg-[#3c78d8] hover:bg-blue-600 text-white rounded shadow-sm border border-[#2b64c0] transition-colors"><Folder class="w-3.5 h-3.5" /></button>
+                      <div class="flex items-center justify-center">
                          <button class="p-1 px-1.5 bg-[#d85858] hover:bg-red-600 text-white rounded shadow-sm border border-red-700 transition-colors"><Trash2 class="w-3.5 h-3.5" /></button>
                       </div>
                     </td>
@@ -171,15 +171,16 @@
               <div class="flex items-center gap-1 font-medium select-none">
                  <button @click="pythonPage--" :disabled="pythonPage === 1" class="hidden md:flex px-2 py-1.5 items-center gap-1 hover:text-slate-900 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">Previous</button>
                  <button @click="pythonPage--" :disabled="pythonPage === 1" :class="['p-1.5 rounded border border-slate-300 bg-white hover:bg-slate-50 transition-colors', pythonPage===1?'opacity-50 cursor-not-allowed':'']"><ChevronLeft class="w-3.5 h-3.5 text-slate-600"/></button>
-                 
-                 <!-- Mock exact page number spread -->
-                 <span class="px-2.5 py-1 rounded bg-[#3c78d8] text-white shadow-sm border border-[#2b64c0]">1</span>
-                 <span class="px-2 text-slate-500 hidden sm:inline">2</span>
-                 <span class="px-2 text-slate-500 hidden sm:inline">3</span>
-                 <span class="px-2 text-slate-400 hidden sm:inline">...</span>
-                 <span class="px-2 text-slate-500 hidden sm:inline">6</span>
-
-                 <button @click="pythonPage++" :disabled="pythonPage >= pythonTotalPages" :class="['flex items-center gap-1 px-3 py-1.5 rounded border border-[#2b64c0] bg-[#3c78d8] hover:bg-blue-600 text-white shadow-sm transition-colors ml-1', pythonPage>=pythonTotalPages?'opacity-80 cursor-not-allowed':'']">Next <ChevronRight class="w-3.5 h-3.5"/></button>
+                 <button 
+                   v-for="p in pythonTotalPages" 
+                   :key="p" 
+                   @click="pythonPage = p"
+                   :class="[
+                     'px-2.5 py-1 rounded transition-colors hidden sm:inline',
+                     pythonPage === p ? 'bg-[#3c78d8] text-white shadow-sm border border-[#2b64c0]' : 'text-slate-500 hover:bg-slate-200'
+                   ]">
+                   {{ p }}
+                 </button>                 <button @click="pythonPage++" :disabled="pythonPage >= pythonTotalPages" :class="['flex items-center gap-1 px-3 py-1.5 rounded border border-[#2b64c0] bg-[#3c78d8] hover:bg-blue-600 text-white shadow-sm transition-colors ml-1', pythonPage>=pythonTotalPages?'opacity-80 cursor-not-allowed':'']">Next <ChevronRight class="w-3.5 h-3.5"/></button>
               </div>
             </div>
           </div>
@@ -199,7 +200,7 @@ import {
 // --- Java Logic ---
 const javaSearch = ref('')
 const javaPage = ref(1)
-const javaPerPage = 7
+const javaPerPage = 5
 
 const rawJava = [
   { name: 'spark-3.2.2.jar', path: '/opt/jdk-11/jars/', size: '0 Bytes', version: '3.2.2' },
@@ -232,7 +233,7 @@ const javaEnd = computed(() => Math.min(javaPage.value * javaPerPage, filteredJa
 // --- Python Logic ---
 const pythonSearch = ref('')
 const pythonPage = ref(1)
-const pythonPerPage = 7
+const pythonPerPage = 5
 
 const rawPython = [
   { name: 'numpy', size: '74.2 MB', version: '1.21.6' },
