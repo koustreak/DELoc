@@ -24,7 +24,7 @@
       <!-- Services Grid -->
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-5">
         
-        <div v-for="service in filteredServices" :key="service.name" class="bg-gradient-to-b from-white to-[#f4f6f9] rounded-md border border-slate-300 shadow-[inset_0_1px_0_rgba(255,255,255,1),0_4px_6px_-2px_rgba(0,0,0,0.05),0_8px_12px_-3px_rgba(0,0,0,0.03)] flex flex-col p-4 transition-all hover:-translate-y-1 hover:shadow-[inset_0_1px_0_rgba(255,255,255,1),0_8px_12px_-3px_rgba(60,120,216,0.15)] group">
+        <div v-for="service in filteredServices" :key="service.name" class="bg-[#f8fafc] rounded-md border border-slate-300 shadow-[inset_0_1px_0_rgba(255,255,255,1),0_4px_6px_-2px_rgba(0,0,0,0.05),0_8px_12px_-3px_rgba(0,0,0,0.03)] flex flex-col p-4 transition-all hover:-translate-y-1 hover:shadow-[inset_0_1px_0_rgba(255,255,255,1),0_8px_12px_-3px_rgba(60,120,216,0.15)] group">
           <!-- Logo & Name -->
           <div class="flex items-end gap-2.5 mb-3 text-slate-800 border-b border-slate-50/0 pb-2">
             <component :is="service.icon" :class="['w-8 h-8 drop-shadow-sm', service.color]" />

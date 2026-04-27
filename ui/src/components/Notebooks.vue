@@ -8,7 +8,7 @@
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-4xl">
         <!-- Apache Zeppelin Card -->
-        <div class="bg-gradient-to-b from-white to-[#f4f6f9] rounded-lg border border-slate-300 shadow-[inset_0_1px_0_rgba(255,255,255,1),0_4px_6px_-2px_rgba(0,0,0,0.05),0_8px_12px_-3px_rgba(0,0,0,0.03)] flex flex-col items-center p-8 relative overflow-hidden group hover:-translate-y-1 hover:shadow-[inset_0_1px_0_rgba(255,255,255,1),0_8px_12px_-3px_rgba(60,120,216,0.15)] transition-all duration-300">
+        <div class="bg-[#f8fafc] rounded-lg border border-slate-300 shadow-[inset_0_1px_0_rgba(255,255,255,1),0_4px_6px_-2px_rgba(0,0,0,0.05),0_8px_12px_-3px_rgba(0,0,0,0.03)] flex flex-col items-center p-8 relative overflow-hidden group hover:-translate-y-1 hover:shadow-[inset_0_1px_0_rgba(255,255,255,1),0_8px_12px_-3px_rgba(60,120,216,0.15)] transition-all duration-300">
           <!-- Background decoration -->
           <div class="absolute -left-12 -bottom-12 w-40 h-40 bg-blue-500/5 rounded-full blur-2xl group-hover:bg-blue-500/10 transition-colors pointer-events-none"></div>
           
@@ -34,7 +34,7 @@
         </div>
 
         <!-- Jupyter Card -->
-        <div class="bg-gradient-to-b from-white to-[#f4f6f9] rounded-lg border border-slate-300 shadow-[inset_0_1px_0_rgba(255,255,255,1),0_4px_6px_-2px_rgba(0,0,0,0.05),0_8px_12px_-3px_rgba(0,0,0,0.03)] flex flex-col items-center p-8 relative overflow-hidden group hover:-translate-y-1 hover:shadow-[inset_0_1px_0_rgba(255,255,255,1),0_8px_12px_-3px_rgba(60,120,216,0.15)] transition-all duration-300">
+        <div class="bg-[#f8fafc] rounded-lg border border-slate-300 shadow-[inset_0_1px_0_rgba(255,255,255,1),0_4px_6px_-2px_rgba(0,0,0,0.05),0_8px_12px_-3px_rgba(0,0,0,0.03)] flex flex-col items-center p-8 relative overflow-hidden group hover:-translate-y-1 hover:shadow-[inset_0_1px_0_rgba(255,255,255,1),0_8px_12px_-3px_rgba(60,120,216,0.15)] transition-all duration-300">
           <!-- Background decoration -->
           <div class="absolute -right-12 -bottom-12 w-40 h-40 bg-orange-500/5 rounded-full blur-2xl group-hover:bg-orange-500/10 transition-colors pointer-events-none"></div>
 

@@ -41,7 +41,7 @@
       <!-- Stacks Grid -->
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         
-        <div v-for="stack in filteredStacks" :key="stack.name" class="bg-gradient-to-b from-white to-[#f4f6f9] rounded border border-slate-300 shadow-[inset_0_1px_0_rgba(255,255,255,1),0_4px_6px_-2px_rgba(0,0,0,0.05),0_8px_12px_-3px_rgba(0,0,0,0.03)] flex flex-col overflow-hidden transition-all hover:-translate-y-1 hover:shadow-[inset_0_1px_0_rgba(255,255,255,1),0_8px_12px_-3px_rgba(60,120,216,0.15)]">
+        <div v-for="stack in filteredStacks" :key="stack.name" class="bg-[#f8fafc] rounded border border-slate-300 shadow-[inset_0_1px_0_rgba(255,255,255,1),0_4px_6px_-2px_rgba(0,0,0,0.05),0_8px_12px_-3px_rgba(0,0,0,0.03)] flex flex-col overflow-hidden transition-all hover:-translate-y-1 hover:shadow-[inset_0_1px_0_rgba(255,255,255,1),0_8px_12px_-3px_rgba(60,120,216,0.15)]">
           <!-- Card Header (Title & Badge) -->
           <div class="flex items-center justify-between px-4 pt-4 pb-3">
             <h3 class="text-[15px] font-semibold text-slate-800">{{ stack.name }}</h3>

@@ -3,7 +3,7 @@
     <main class="flex-1 overflow-y-auto w-full p-6 space-y-6">
       
       <!-- Java Environment Card -->
-      <div class="bg-white rounded-md border border-slate-200/80 shadow-[0_2px_8px_-3px_rgba(0,0,0,0.1)] overflow-hidden flex flex-col">
+      <div class="bg-[#f8fafc] rounded-md border border-slate-200/80 shadow-[0_2px_8px_-3px_rgba(0,0,0,0.1)] overflow-hidden flex flex-col">
         <!-- Header -->
         <div class="px-5 py-3.5 bg-[#f8fafc] border-b border-slate-200/80 flex items-center justify-between">
           <div class="flex items-center gap-3">
@@ -97,7 +97,7 @@
       </div>
 
       <!-- Python Environment Card -->
-      <div class="bg-white rounded-md border border-slate-200/80 shadow-[0_2px_8px_-3px_rgba(0,0,0,0.1)] overflow-hidden flex flex-col">
+      <div class="bg-[#f8fafc] rounded-md border border-slate-200/80 shadow-[0_2px_8px_-3px_rgba(0,0,0,0.1)] overflow-hidden flex flex-col">
         <!-- Header -->
         <div class="px-5 py-3 bg-[#f8fafc] border-b border-slate-200/80 flex items-center justify-between">
           <div class="flex items-center gap-3">

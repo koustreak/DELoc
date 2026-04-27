@@ -6,41 +6,41 @@
       <!-- Top Stats Row -->
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <!-- CPU Usage -->
-        <div class="bg-gradient-to-b from-white to-[#f4f6f9] rounded-lg border border-slate-300/70 shadow-[inset_0_1px_0_rgba(255,255,255,1),0_2px_4px_-1px_rgba(0,0,0,0.03),0_4px_6px_-2px_rgba(0,0,0,0.03)] p-3.5 flex flex-col justify-between transition-shadow hover:shadow-[inset_0_1px_0_rgba(255,255,255,1),0_4px_8px_-2px_rgba(0,0,0,0.05)]">
+        <div class="bg-[#f8fafc] rounded-lg border border-slate-300/70 shadow-[inset_0_1px_0_rgba(255,255,255,1),0_2px_4px_-1px_rgba(0,0,0,0.03),0_4px_6px_-2px_rgba(0,0,0,0.03)] p-3.5 flex flex-col justify-between transition-shadow hover:shadow-[inset_0_1px_0_rgba(255,255,255,1),0_4px_8px_-2px_rgba(0,0,0,0.05)]">
           <div class="flex items-center gap-2 mb-3 text-slate-700 font-semibold border-b border-slate-100 pb-1.5 text-xs">
             <Activity class="w-4 h-4 text-emerald-500" />
             <h3>CPU Usage</h3>
           </div>
           <div>
             <div class="flex items-end gap-2 mb-1.5">
-              <span class="text-2xl font-bold text-slate-800">18<span class="text-lg text-slate-500 font-normal">%</span></span>
-              <span class="text-xs font-medium text-emerald-600 mb-1 ml-1">Healthy</span>
+              <span class="text-2xl font-bold text-slate-800">{{ Math.round(cpuUsage) }}<span class="text-lg text-slate-500 font-normal">%</span></span>
+              <span class="text-xs font-medium text-emerald-600 mb-1 ml-1">{{ cpuUsage > 80 ? 'Heavy' : 'Healthy' }}</span>
             </div>
-            <div class="w-full bg-slate-100 rounded-full h-2">
-              <div class="bg-emerald-500 h-2 rounded-full" style="width: 18%"></div>
+            <div class="w-full bg-slate-100 dark:bg-slate-800/50 rounded-full h-2 overflow-hidden">
+              <div class="bg-emerald-500 h-2 rounded-full transition-all duration-500 ease-out" :style="{ width: cpuUsage + '%' }"></div>
             </div>
           </div>
         </div>
 
         <!-- Memory Usage -->
-        <div class="bg-gradient-to-b from-white to-[#f4f6f9] rounded-lg border border-slate-300/70 shadow-[inset_0_1px_0_rgba(255,255,255,1),0_2px_4px_-1px_rgba(0,0,0,0.03),0_4px_6px_-2px_rgba(0,0,0,0.03)] p-3.5 flex flex-col justify-between transition-shadow hover:shadow-[inset_0_1px_0_rgba(255,255,255,1),0_4px_8px_-2px_rgba(0,0,0,0.05)]">
+        <div class="bg-[#f8fafc] rounded-lg border border-slate-300/70 shadow-[inset_0_1px_0_rgba(255,255,255,1),0_2px_4px_-1px_rgba(0,0,0,0.03),0_4px_6px_-2px_rgba(0,0,0,0.03)] p-3.5 flex flex-col justify-between transition-shadow hover:shadow-[inset_0_1px_0_rgba(255,255,255,1),0_4px_8px_-2px_rgba(0,0,0,0.05)]">
           <div class="flex items-center gap-2 mb-3 text-slate-700 font-semibold border-b border-slate-100 pb-1.5 text-xs">
             <Server class="w-4 h-4 text-blue-500" />
             <h3>Memory Usage</h3>
           </div>
           <div>
             <div class="flex items-end gap-2 mb-1.5">
-              <span class="text-2xl font-bold text-slate-800">5.4</span>
-              <span class="text-base text-slate-400 font-light pb-0.5">/ 16 GB</span>
+              <span class="text-2xl font-bold text-slate-800">{{ memoryUsed.toFixed(1) }}</span>
+              <span class="text-base text-slate-400 font-light pb-0.5">/ {{ Math.round(memoryTotal) }} GB</span>
             </div>
-            <div class="w-full bg-slate-100 rounded-full h-2">
-              <div class="bg-blue-500 h-2 rounded-full" style="width: 34%"></div>
+            <div class="w-full bg-slate-100 dark:bg-slate-800/50 rounded-full h-2 overflow-hidden">
+              <div class="bg-blue-500 h-2 rounded-full transition-all duration-500 ease-out" :style="{ width: memoryPerc + '%' }"></div>
             </div>
           </div>
         </div>
 
         <!-- DELoc Containers -->
-        <div class="bg-gradient-to-b from-white to-[#f4f6f9] rounded-lg border border-slate-300/70 shadow-[inset_0_1px_0_rgba(255,255,255,1),0_2px_4px_-1px_rgba(0,0,0,0.03),0_4px_6px_-2px_rgba(0,0,0,0.03)] p-3.5 flex flex-col justify-between transition-shadow hover:shadow-[inset_0_1px_0_rgba(255,255,255,1),0_4px_8px_-2px_rgba(0,0,0,0.05)]">
+        <div class="bg-[#f8fafc] rounded-lg border border-slate-300/70 shadow-[inset_0_1px_0_rgba(255,255,255,1),0_2px_4px_-1px_rgba(0,0,0,0.03),0_4px_6px_-2px_rgba(0,0,0,0.03)] p-3.5 flex flex-col justify-between transition-shadow hover:shadow-[inset_0_1px_0_rgba(255,255,255,1),0_4px_8px_-2px_rgba(0,0,0,0.05)]">
           <div class="flex items-center gap-2 mb-3 text-slate-700 font-semibold border-b border-slate-100 pb-1.5 text-xs">
             <Box class="w-4 h-4 text-orange-500" />
             <h3>DELoc Containers</h3>
@@ -56,7 +56,7 @@
       </div>
 
       <!-- Running Services Table -->
-      <div class="bg-gradient-to-b from-white to-[#f4f6f9] rounded-lg border border-slate-300 shadow-[inset_0_1px_0_rgba(255,255,255,1),0_2px_4px_-1px_rgba(0,0,0,0.03),0_4px_6px_-2px_rgba(0,0,0,0.03)] overflow-hidden flex flex-col" style="min-height: 300px;">
+      <div class="bg-[#f8fafc] rounded-lg border border-slate-300 shadow-[inset_0_1px_0_rgba(255,255,255,1),0_2px_4px_-1px_rgba(0,0,0,0.03),0_4px_6px_-2px_rgba(0,0,0,0.03)] overflow-hidden flex flex-col" style="min-height: 300px;">
         <!-- Table Header with Search & Pagination -->
         <div class="px-3 py-2 bg-slate-50 border-b border-slate-200 flex items-center justify-between gap-3">
           <div class="flex items-center gap-2 font-semibold text-slate-700 text-xs">
@@ -234,10 +234,31 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { 
   Server, Box, Activity, Layers, Check, Search, ChevronLeft, ChevronRight, HardDrive, Database
 } from 'lucide-vue-next'
+import { EventsOn, EventsOff } from '../../wailsjs/runtime/runtime.js'
+
+// --- System Metrics State ---
+const cpuUsage = ref(0)
+const memoryUsed = ref(0)
+const memoryTotal = ref(0)
+const memoryPerc = ref(0)
+
+onMounted(() => {
+  // Catch the enterprise push events from Go backend
+  EventsOn('system:stats', (stats) => {
+    cpuUsage.value = stats.cpuUsage
+    memoryUsed.value = stats.memoryUsed
+    memoryTotal.value = stats.memoryTotal
+    memoryPerc.value = stats.memoryPerc
+  })
+})
+
+onUnmounted(() => {
+  EventsOff('system:stats')
+})
 
 const searchQuery = ref('')
 const currentPage = ref(1)

@@ -4,7 +4,7 @@
     <main class="flex-1 overflow-y-auto w-full p-6 space-y-6">
       
       <!-- Table 1: Volumes in Action (PVCs) -->
-      <div class="bg-white/90 rounded border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+      <div class="bg-[#f8fafc] rounded border border-slate-200 shadow-sm overflow-hidden flex flex-col">
         <!-- Header & Top Pagination -->
         <div class="px-4 py-2.5 bg-slate-50/80 border-b border-slate-200 flex items-center justify-between gap-3">
           <div class="flex items-center gap-2 font-semibold text-slate-700 text-[13px]">
@@ -75,7 +75,7 @@
       </div>
 
       <!-- Table 2: Archived Volumes -->
-      <div class="bg-white/90 rounded border border-slate-200 shadow-sm overflow-hidden flex flex-col mt-6">
+      <div class="bg-[#f8fafc] rounded border border-slate-200 shadow-sm overflow-hidden flex flex-col mt-6">
         <!-- Header & Top Pagination -->
         <div class="px-4 py-2.5 bg-slate-50/80 border-b border-slate-200 flex items-center justify-between gap-3">
           <div class="flex items-center gap-2 font-semibold text-slate-700 text-[13px]">
@@ -142,11 +142,11 @@
       </div>
 
       <!-- Bottom Form: Archive a PVC -->
-      <div class="bg-white/90 rounded border border-slate-200 shadow-sm overflow-hidden flex flex-col mt-6">
+      <div class="bg-[#f8fafc] rounded border border-slate-200 shadow-sm overflow-hidden flex flex-col mt-6">
          <div class="px-4 py-2.5 bg-slate-50/80 border-b border-slate-200 font-semibold text-slate-700 text-[13px] flex items-center gap-2">
             <ArchiveRestore class="w-4 h-4 text-slate-600" /> Archive a PVC
          </div>
-         <div class="p-5 flex flex-col md:flex-row items-center gap-4 bg-white">
+         <div class="p-5 flex flex-col md:flex-row items-center gap-4 bg-[#f8fafc]">
             <div class="text-slate-600 text-[13px]">Select PVC to Archive.</div>
             
             <div class="relative w-full md:w-64">
