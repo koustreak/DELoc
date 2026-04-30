@@ -70,7 +70,10 @@ func (m *Manager) getSystemStats() Stats {
 	vMem, err := mem.VirtualMemory()
 	var memUsed, memTotal, memPerc float64
 	if err == nil {
-		memUsed = float64(vMem.Used) / (1024 * 1024 * 1024) // Convert to GB
+		// Use (Total - Available) for a consistent "Task Manager" feel.
+		// This ensures the GB value matches the UsedPercent progress bar.
+		actualUsed := vMem.Total - vMem.Available
+		memUsed = float64(actualUsed) / (1024 * 1024 * 1024) 
 		memTotal = float64(vMem.Total) / (1024 * 1024 * 1024)
 		memPerc = vMem.UsedPercent
 	}
