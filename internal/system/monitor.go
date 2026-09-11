@@ -53,10 +53,17 @@ func (m *Manager) getSystemStats() Stats {
 	vMem, err := mem.VirtualMemory()
 	var memUsed, memTotal, memPerc float64
 	if err == nil {
-		actualUsed := vMem.Total - vMem.Available
-		memUsed = float64(actualUsed) / (1024 * 1024 * 1024)
-		memTotal = float64(vMem.Total) / (1024 * 1024 * 1024)
-		memPerc = vMem.UsedPercent
+		// GNOME System Monitor formula: Total - Free - Buffers - Cached + Shmem
+		// In gopsutil terms: vMem.Used + vMem.Shared
+		// vMem.Used = Total - Free - Buffers - Cached (Shmem is folded into Cached by kernel)
+		// vMem.Shared = Shmem — added back because GNOME treats it as process-owned memory
+		actualUsed := vMem.Used + vMem.Shared
+		// Divide by 1e9 (GB) not 1024³ (GiB) — GNOME System Monitor uses decimal GB.
+		// That 7.37% difference is exactly the gap between "7.5" and "8.1".
+		const gb = 1_000_000_000.0
+		memUsed = float64(actualUsed) / gb
+		memTotal = float64(vMem.Total) / gb
+		memPerc = (float64(actualUsed) / float64(vMem.Total)) * 100
 	}
 
 	return Stats{
