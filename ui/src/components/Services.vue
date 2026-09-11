@@ -28,7 +28,7 @@
         >
           <!-- Logo & Name -->
           <div class="flex items-end gap-2.5 mb-3 text-slate-800 border-b border-slate-50/0 pb-2">
-            <component :is="service.icon" :class="['w-8 h-8 drop-shadow-sm', service.color]" />
+            <ServiceIcon :name="service.name" class="w-8 h-8 drop-shadow-sm" />
             <h3 class="text-[17px] font-semibold leading-tight tracking-tight">{{ service.name }}</h3>
           </div>
           <!-- Version -->
@@ -68,7 +68,7 @@
             <!-- Modal Header -->
             <div class="flex items-center justify-between px-5 py-3.5 border-b border-slate-100 bg-slate-50">
               <div class="flex items-center gap-2.5">
-                <component :is="selectedService.icon" :class="['w-5 h-5', selectedService.color]" />
+                <ServiceIcon :name="selectedService.name" class="w-6 h-6 drop-shadow-sm" />
                 <span class="font-semibold text-slate-800 text-sm tracking-tight">Configure — {{ selectedService.name }}</span>
               </div>
               <button @click="showConfigModal = false" class="text-slate-400 hover:text-slate-700 transition-colors p-1 rounded hover:bg-slate-100">
@@ -288,9 +288,9 @@
 <script setup>
 import { ref, computed } from 'vue'
 import {
-  Search, Layers, Play, Database, Server, Hexagon, Component,
-  Wind, HardDrive, Zap, Share2, Leaf, Box, Network, X, RefreshCw
+  Search, Layers, Play, X, RefreshCw
 } from 'lucide-vue-next'
+import ServiceIcon from './common/ServiceIcon.vue'
 import { FetchDockerTags } from '../../wailsjs/go/bindings/Service.js'
 
 const searchQuery = ref('')
@@ -298,8 +298,6 @@ const searchQuery = ref('')
 const servicesList = [
   {
     name: 'HDFS',
-    icon: Database,
-    color: 'text-yellow-600',
     version: 'v3.3.6',
     defaultTag: '3.3.6',
     description: 'Distributed file system for big data storage.',
@@ -307,8 +305,6 @@ const servicesList = [
   },
   {
     name: 'Kafka',
-    icon: Share2,
-    color: 'text-slate-800',
     version: 'v3.6.1',
     defaultTag: '3.6.1',
     description: 'Distributed event streaming platform.',
@@ -316,8 +312,6 @@ const servicesList = [
   },
   {
     name: 'Airflow',
-    icon: Wind,
-    color: 'text-cyan-500',
     version: 'v2.8.1',
     defaultTag: '2.8.1',
     description: 'Workflow orchestration tool for data pipelines.',
@@ -325,8 +319,6 @@ const servicesList = [
   },
   {
     name: 'Trino',
-    icon: Hexagon,
-    color: 'text-indigo-600',
     version: 'v440',
     defaultTag: '440',
     description: 'Distributed SQL query engine for big data.',
@@ -334,8 +326,6 @@ const servicesList = [
   },
   {
     name: 'Apache Hive',
-    icon: Box,
-    color: 'text-amber-500',
     version: 'v4.0.0',
     defaultTag: '4.0.0',
     description: 'Data warehouse software for querying and managing large datasets.',
@@ -343,8 +333,6 @@ const servicesList = [
   },
   {
     name: 'Cassandra',
-    icon: Server,
-    color: 'text-blue-500',
     version: 'v4.1.3',
     defaultTag: '4.1.3',
     description: 'Highly scalable distributed NoSQL database.',
@@ -352,17 +340,13 @@ const servicesList = [
   },
   {
     name: 'Pinot',
-    icon: Component,
-    color: 'text-rose-600',
     version: 'v1.0.0',
     defaultTag: '1.0.0',
     description: 'Real-time distributed OLAP datastore.',
     repos: ['apachepinot/pinot']
   },
   {
-    name: 'Minio',
-    icon: HardDrive,
-    color: 'text-red-500',
+    name: 'MinIO',
     version: 'RELEASE.2024',
     defaultTag: 'latest',
     description: 'High performance S3 compatible object storage.',
@@ -370,17 +354,13 @@ const servicesList = [
   },
   {
     name: 'Spark',
-    icon: Zap,
-    color: 'text-orange-500',
     version: 'v3.5.0',
     defaultTag: '3.5.0',
     description: 'Unified analytics engine for large-scale data processing.',
     repos: ['apache/spark', 'bitnami/spark']
   },
   {
-    name: 'Nifi',
-    icon: Network,
-    color: 'text-teal-600',
+    name: 'NiFi',
     version: 'v1.25.0',
     defaultTag: '1.25.0',
     description: 'Automates the flow of data between systems.',
@@ -388,8 +368,6 @@ const servicesList = [
   },
   {
     name: 'PostgreSQL',
-    icon: Database,
-    color: 'text-blue-400',
     version: 'v16.2',
     defaultTag: '16.2',
     description: 'Powerful, open source object-relational database.',
@@ -397,17 +375,13 @@ const servicesList = [
   },
   {
     name: 'MongoDB',
-    icon: Leaf,
-    color: 'text-emerald-500',
     version: 'v7.0.5',
     defaultTag: '7.0.5',
     description: 'Document-oriented NoSQL database system.',
     repos: ['mongo', 'bitnami/mongodb']
   },
   {
-    name: 'Neo4J',
-    icon: Share2,
-    color: 'text-cyan-700',
+    name: 'Neo4j',
     version: 'v5.17.0',
     defaultTag: '5.17.0',
     description: 'Native graph database designed for connected data.',

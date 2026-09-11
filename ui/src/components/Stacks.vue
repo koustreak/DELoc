@@ -59,7 +59,7 @@
           <div class="flex-1 px-4 mb-3 h-48 overflow-y-auto">
             <ul class="space-y-1.5 relative border-r-2 border-slate-200/50 pr-2">
               <li v-for="service in stack.services" :key="service.name" class="flex items-center gap-3 py-1.5 border-b border-slate-200/40 last:border-0 hover:bg-slate-100/50 transition-colors px-1 rounded">
-                <component :is="service.icon" :class="['w-4 h-4 drop-shadow-sm', service.color]" />
+                <ServiceIcon :name="service.name" class="w-4 h-4 drop-shadow-sm" />
                 <span class="text-[13px] font-medium text-slate-700">{{ service.name }}</span>
               </li>
             </ul>
@@ -88,9 +88,9 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { 
-  Search, Database, Play, ChevronDown, Plus,
-  Zap, Share2, Hexagon, Wind, Droplet, Box
+  Search, Database, Play, ChevronDown, Plus
 } from 'lucide-vue-next'
+import ServiceIcon from './common/ServiceIcon.vue'
 
 const searchQuery = ref('')
 

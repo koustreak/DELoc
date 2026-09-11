@@ -113,9 +113,7 @@
             <tbody class="divide-y divide-slate-100">
               <tr v-for="service in paginatedServices" :key="service.name" class="hover:bg-slate-50/50 transition-colors">
                 <td class="px-3 py-2 font-semibold text-slate-800 flex items-center gap-2">
-                  <div :class="['w-5 h-5 rounded text-white flex items-center justify-center text-[10px] font-black', service.color]">
-                    {{ service.abbr }}
-                  </div>
+                  <ServiceIcon :name="service.name" class="w-5 h-5 drop-shadow-sm" />
                   {{ service.name }}
                 </td>
                 <td class="px-3 py-2 text-slate-600">{{ service.startDate }}</td>
@@ -257,6 +255,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { 
   Server, Box, Activity, Layers, Check, Search, ChevronLeft, ChevronRight, HardDrive, Database
 } from 'lucide-vue-next'
+import ServiceIcon from './common/ServiceIcon.vue'
 import { EventsOn, EventsOff } from '../../wailsjs/runtime/runtime.js'
 
 // --- System Metrics State ---
