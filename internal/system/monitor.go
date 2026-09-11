@@ -18,7 +18,6 @@ type Stats struct {
 }
 
 // Manager handles the gathering and broadcasting of system metrics.
-// It follows Google-style Go practices by isolating the background monitoring logic.
 type Manager struct {
 	ctx context.Context
 }
@@ -31,49 +30,31 @@ func NewManager() *Manager {
 // Start initiates the monitoring loop. It should be called during Wails onStartup.
 func (m *Manager) Start(ctx context.Context) {
 	m.ctx = ctx
-	// Warm up the CPU collector so the first tick isn't 0
-	_, _ = cpu.Percent(0, false)
-	// Run the monitoring loop in a separate goroutine to avoid blocking the main app.
 	go m.monitorLoop()
 }
 
 // monitorLoop fetches system stats at regular intervals and emits them via Wails events.
 func (m *Manager) monitorLoop() {
-	// We use a shorter tick interval for that "Task Manager" instantaneous feel.
-	ticker := time.NewTicker(1 * time.Second)
-	defer ticker.Stop()
-
 	for {
 		select {
 		case <-m.ctx.Done():
-			// Cleanly stop the loop if the application context is cancelled.
 			return
-		case <-ticker.C:
+		default:
 			stats := m.getSystemStats()
-			// Push the stats to the frontend with a specific event ID.
 			runtime.EventsEmit(m.ctx, "system:stats", stats)
 		}
 	}
 }
 
-// getSystemStats collects CPU and Memory data using gopsutil.
+// getSystemStats collects CPU and Memory data.
 func (m *Manager) getSystemStats() Stats {
-	// cpu.Percent(0, false) returns the instantaneous usage based on the last call.
-	// Since we are running in a loop, it will give us precise delta changes.
-	cpuPerc, err := cpu.Percent(0, false)
-	var cpuVal float64
-	if err == nil && len(cpuPerc) > 0 {
-		cpuVal = cpuPerc[0]
-	}
+	cpuVal := m.cpuPercent()
 
-	// Memory stats
 	vMem, err := mem.VirtualMemory()
 	var memUsed, memTotal, memPerc float64
 	if err == nil {
-		// Use (Total - Available) for a consistent "Task Manager" feel.
-		// This ensures the GB value matches the UsedPercent progress bar.
 		actualUsed := vMem.Total - vMem.Available
-		memUsed = float64(actualUsed) / (1024 * 1024 * 1024) 
+		memUsed = float64(actualUsed) / (1024 * 1024 * 1024)
 		memTotal = float64(vMem.Total) / (1024 * 1024 * 1024)
 		memPerc = vMem.UsedPercent
 	}
@@ -84,4 +65,46 @@ func (m *Manager) getSystemStats() Stats {
 		MemoryTotal: memTotal,
 		MemoryPerc:  memPerc,
 	}
+}
+
+// cpuPercent computes CPU usage over a 1-second window using cpu.Times() directly.
+// It includes iowait in the busy time, matching the behaviour of GNOME System Monitor
+// and htop on Linux — which is what users expect to see.
+func (m *Manager) cpuPercent() float64 {
+	t1, err := cpu.Times(false)
+	if err != nil || len(t1) == 0 {
+		return 0
+	}
+
+	time.Sleep(1 * time.Second)
+
+	t2, err := cpu.Times(false)
+	if err != nil || len(t2) == 0 {
+		return 0
+	}
+
+	c1, c2 := t1[0], t2[0]
+
+	deltaUser := c2.User - c1.User
+	deltaNice := c2.Nice - c1.Nice
+	deltaSystem := c2.System - c1.System
+	deltaIdle := c2.Idle - c1.Idle
+	deltaIowait := c2.Iowait - c1.Iowait
+	deltaIrq := c2.Irq - c1.Irq
+	deltaSoftirq := c2.Softirq - c1.Softirq
+	deltaSteal := c2.Steal - c1.Steal
+
+	total := deltaUser + deltaNice + deltaSystem + deltaIdle +
+		deltaIowait + deltaIrq + deltaSoftirq + deltaSteal
+
+	if total == 0 {
+		return 0
+	}
+
+	// Busy = everything except idle.
+	// iowait is included so the value matches GNOME System Monitor on Linux.
+	busy := deltaUser + deltaNice + deltaSystem + deltaIowait +
+		deltaIrq + deltaSoftirq + deltaSteal
+
+	return (busy / total) * 100
 }
