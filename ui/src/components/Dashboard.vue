@@ -4,7 +4,7 @@
     <main class="flex-1 p-4 overflow-y-auto space-y-4">
       
       <!-- Top Stats Row -->
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div class="grid grid-cols-1 lg:grid-cols-4 gap-4">
         <!-- CPU Usage -->
         <div class="bg-[#f8fafc] rounded-lg border border-slate-300/70 shadow-[inset_0_1px_0_rgba(255,255,255,1),0_2px_4px_-1px_rgba(0,0,0,0.03),0_4px_6px_-2px_rgba(0,0,0,0.03)] p-3.5 flex flex-col justify-between transition-shadow hover:shadow-[inset_0_1px_0_rgba(255,255,255,1),0_4px_8px_-2px_rgba(0,0,0,0.05)]">
           <div class="flex items-center gap-2 mb-3 text-slate-700 font-semibold border-b border-slate-100 pb-1.5 text-xs">
@@ -14,10 +14,12 @@
           <div>
             <div class="flex items-end gap-2 mb-1.5">
               <span class="text-2xl font-bold text-slate-800">{{ Math.round(cpuUsage) }}<span class="text-lg text-slate-500 font-normal">%</span></span>
-              <span class="text-xs font-medium text-emerald-600 mb-1 ml-1">{{ cpuUsage > 80 ? 'Heavy' : 'Healthy' }}</span>
+              <span :class="['text-xs font-medium mb-1 ml-1', cpuUsage >= 80 ? 'text-red-500' : cpuUsage >= 60 ? 'text-yellow-500' : 'text-emerald-600']">
+                {{ cpuUsage >= 80 ? 'Heavy' : cpuUsage >= 60 ? 'Moderate' : 'Healthy' }}
+              </span>
             </div>
             <div class="w-full bg-slate-100 dark:bg-slate-800/50 rounded-full h-2 overflow-hidden">
-              <div class="bg-emerald-500 h-2 rounded-full transition-all duration-500 ease-out" :style="{ width: cpuUsage + '%' }"></div>
+              <div :class="[barColor(cpuUsage, 'bg-emerald-500'), 'h-2 rounded-full transition-all duration-500 ease-out']" :style="{ width: cpuUsage + '%' }"></div>
             </div>
           </div>
         </div>
@@ -34,7 +36,24 @@
               <span class="text-base text-slate-400 font-light pb-0.5">/ {{ Math.round(memoryTotal) }} GB</span>
             </div>
             <div class="w-full bg-slate-100 dark:bg-slate-800/50 rounded-full h-2 overflow-hidden">
-              <div class="bg-blue-500 h-2 rounded-full transition-all duration-500 ease-out" :style="{ width: memoryPerc + '%' }"></div>
+              <div :class="[barColor(memoryPerc, 'bg-blue-500'), 'h-2 rounded-full transition-all duration-500 ease-out']" :style="{ width: memoryPerc + '%' }"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Storage Used -->
+        <div class="bg-[#f8fafc] rounded-lg border border-slate-300/70 shadow-[inset_0_1px_0_rgba(255,255,255,1),0_2px_4px_-1px_rgba(0,0,0,0.03),0_4px_6px_-2px_rgba(0,0,0,0.03)] p-3.5 flex flex-col justify-between transition-shadow hover:shadow-[inset_0_1px_0_rgba(255,255,255,1),0_4px_8px_-2px_rgba(0,0,0,0.05)]">
+          <div class="flex items-center gap-2 mb-3 text-slate-700 font-semibold border-b border-slate-100 pb-1.5 text-xs">
+            <HardDrive class="w-4 h-4 text-amber-500" />
+            <h3>Storage Used</h3>
+          </div>
+          <div>
+            <div class="flex items-end gap-2 mb-1.5">
+              <span class="text-2xl font-bold text-slate-800">{{ diskUsed.toFixed(1) }}</span>
+              <span class="text-base text-slate-400 font-light pb-0.5">/ {{ diskTotal.toFixed(0) }} GB</span>
+            </div>
+            <div class="w-full bg-slate-100 dark:bg-slate-800/50 rounded-full h-2 overflow-hidden">
+              <div :class="[barColor(diskPerc, 'bg-amber-500'), 'h-2 rounded-full transition-all duration-500 ease-out']" :style="{ width: diskPerc + '%' }"></div>
             </div>
           </div>
         </div>
@@ -245,16 +264,29 @@ const cpuUsage = ref(0)
 const memoryUsed = ref(0)
 const memoryTotal = ref(0)
 const memoryPerc = ref(0)
+const diskUsed = ref(0)
+const diskTotal = ref(0)
+const diskPerc = ref(0)
 
 onMounted(() => {
-  // Catch the enterprise push events from Go backend
   EventsOn('system:stats', (stats) => {
     cpuUsage.value = stats.cpuUsage
     memoryUsed.value = stats.memoryUsed
     memoryTotal.value = stats.memoryTotal
     memoryPerc.value = stats.memoryPerc
+    diskUsed.value = stats.diskUsed
+    diskTotal.value = stats.diskTotal
+    diskPerc.value = stats.diskPerc
   })
 })
+
+// Returns the correct progress-bar colour class based on usage %.
+// Default colour per card; yellow at ≥60%, red at ≥80%.
+function barColor(perc, defaultClass) {
+  if (perc >= 80) return 'bg-red-500'
+  if (perc >= 60) return 'bg-yellow-400'
+  return defaultClass
+}
 
 onUnmounted(() => {
   EventsOff('system:stats')

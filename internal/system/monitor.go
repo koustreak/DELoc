@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/shirou/gopsutil/v3/cpu"
+	"github.com/shirou/gopsutil/v3/disk"
 	"github.com/shirou/gopsutil/v3/mem"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
@@ -15,6 +16,9 @@ type Stats struct {
 	MemoryUsed  float64 `json:"memoryUsed"`
 	MemoryTotal float64 `json:"memoryTotal"`
 	MemoryPerc  float64 `json:"memoryPerc"`
+	DiskUsed    float64 `json:"diskUsed"`
+	DiskTotal   float64 `json:"diskTotal"`
+	DiskPerc    float64 `json:"diskPerc"`
 }
 
 // Manager handles the gathering and broadcasting of system metrics.
@@ -66,11 +70,22 @@ func (m *Manager) getSystemStats() Stats {
 		memPerc = (float64(actualUsed) / float64(vMem.Total)) * 100
 	}
 
+	var diskUsed, diskTotal, diskPerc float64
+	if du, err := disk.Usage("/"); err == nil {
+		const gb = 1_000_000_000.0
+		diskUsed = float64(du.Used) / gb
+		diskTotal = float64(du.Total) / gb
+		diskPerc = du.UsedPercent
+	}
+
 	return Stats{
 		CPUUsage:    cpuVal,
 		MemoryUsed:  memUsed,
 		MemoryTotal: memTotal,
 		MemoryPerc:  memPerc,
+		DiskUsed:    diskUsed,
+		DiskTotal:   diskTotal,
+		DiskPerc:    diskPerc,
 	}
 }
 
