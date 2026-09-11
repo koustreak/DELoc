@@ -5,6 +5,7 @@ import (
 	"embed"
 	"log"
 
+	"deloc/internal/bindings"
 	"deloc/internal/system"
 
 	"github.com/wailsapp/wails/v2"
@@ -22,6 +23,7 @@ var icon []byte
 func main() {
 	// Initialize enterprise-grade system monitor
 	sysMonitor := system.NewManager()
+	appService := bindings.NewService()
 
 	err := wails.Run(&options.App{
 		Title:            "DELoc",
@@ -39,8 +41,12 @@ func main() {
 			ProgramName: "deloc",
 		},
 		OnStartup: func(ctx context.Context) {
+			appService.Startup(ctx)
 			// Start the background monitoring loop
 			sysMonitor.Start(ctx)
+		},
+		Bind: []interface{}{
+			appService,
 		},
 	})
 	if err != nil {

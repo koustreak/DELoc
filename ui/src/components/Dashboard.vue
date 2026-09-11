@@ -75,9 +75,9 @@
       </div>
 
       <!-- Running Services Table -->
-      <div class="bg-[#f8fafc] rounded-lg border border-slate-300 shadow-[inset_0_1px_0_rgba(255,255,255,1),0_2px_4px_-1px_rgba(0,0,0,0.03),0_4px_6px_-2px_rgba(0,0,0,0.03)] overflow-hidden flex flex-col" style="min-height: 300px;">
+      <div class="bg-[#f8fafc] rounded-lg border border-slate-300 shadow-[inset_0_1px_0_rgba(255,255,255,1),0_2px_4px_-1px_rgba(0,0,0,0.03),0_4px_6px_-2px_rgba(0,0,0,0.03)] overflow-hidden flex flex-col min-h-[260px] flex-1">
         <!-- Table Header with Search & Pagination -->
-        <div class="px-3 py-2 bg-slate-50 border-b border-slate-200 flex items-center justify-between gap-3">
+        <div class="px-3 py-2 bg-slate-50 border-b border-slate-200 flex items-center justify-between gap-3 flex-shrink-0">
           <div class="flex items-center gap-2 font-semibold text-slate-700 text-xs">
             <Layers class="w-4 h-4 text-slate-500" />
             Running Services
@@ -98,7 +98,7 @@
           </div>
         </div>
         <!-- Scrollable Table Body -->
-        <div class="flex-1 overflow-y-auto overflow-x-auto" style="max-height: 280px;">
+        <div class="flex-1 overflow-y-auto overflow-x-auto min-h-[160px]">
           <table class="w-full text-left text-xs whitespace-nowrap">
             <thead class="bg-slate-50 text-slate-500 border-b border-slate-200 font-medium sticky top-0 z-10">
               <tr>
@@ -143,7 +143,7 @@
       <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
         
         <!-- Persistent Volumes -->
-        <div class="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden flex flex-col" style="min-height: 250px;">
+        <div class="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden flex flex-col min-h-[220px]">
           <!-- Table Header with Search & Pagination -->
           <div class="px-3 py-2 bg-slate-50 border-b border-slate-200 flex items-center justify-between gap-3">
             <div class="flex items-center gap-2 font-semibold text-slate-700 text-xs">
@@ -194,7 +194,7 @@
         </div>
 
         <!-- Running Stacks -->
-        <div class="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden flex flex-col" style="min-height: 250px;">
+        <div class="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden flex flex-col min-h-[220px]">
           <!-- Table Header with Search & Pagination -->
           <div class="px-3 py-2 bg-slate-50 border-b border-slate-200 flex items-center justify-between gap-3">
             <div class="flex items-center gap-2 font-semibold text-slate-700 text-xs">

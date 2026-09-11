@@ -1,7 +1,7 @@
 <template>
   <div class="titlebar" :class="{ maximized: isMaximized }">
     <!-- Drag region -->
-    <div class="titlebar-drag">
+    <div class="titlebar-drag" @dblclick="toggleMaximise">
       <img src="/deloc-navbar-logo.png" alt="DELoc" class="titlebar-logo" />
       <span class="titlebar-title">DELoc</span>
     </div>
@@ -24,7 +24,6 @@
         <!-- The Settings Menu -->
         <div v-if="showSettingsMenu" class="absolute top-[40px] right-0 w-80 bg-white rounded-bl-md rounded-br-md shadow-[0_10px_25px_-5px_rgba(0,0,0,0.3)] border border-slate-200 z-[100] text-slate-800 overflow-hidden flex flex-col font-sans cursor-default">
           
-
 
           <!-- Networking -->
           <div class="p-3.5 border-b border-slate-100 flex flex-col gap-2">
@@ -55,7 +54,9 @@
       <button class="ctrl-btn minimize ml-2" @click="minimise" title="Minimize">
         <svg width="10" height="2" viewBox="0 0 10 2"><rect width="10" height="2" fill="currentColor"/></svg>
       </button>
-      <button class="ctrl-btn maximise" @click="toggleMaximise" :title="isMaximized ? 'Restore' : 'Maximize'">
+
+      <!-- Button 1: Maximize Window (Keeps Taskbar & Panels) -->
+      <button class="ctrl-btn maximise" @click="toggleMaximise" :title="isMaximized ? 'Restore Window' : 'Maximize Window'">
         <svg v-if="!isMaximized" width="10" height="10" viewBox="0 0 10 10">
           <rect x="0.5" y="0.5" width="9" height="9" stroke="currentColor" stroke-width="1.2" fill="none"/>
         </svg>
@@ -64,6 +65,17 @@
           <rect x="0" y="2" width="8" height="8" stroke="currentColor" stroke-width="1.2" fill="none" style="fill: var(--titlebar-bg)"/>
         </svg>
       </button>
+
+      <!-- Button 2: Maximize Fullscreen (Full 24-inch Display Expansion) -->
+      <button class="ctrl-btn fullscreen" @click="toggleFullscreen" :title="isFullscreen ? 'Exit Fullscreen' : 'Maximize Fullscreen'">
+        <svg v-if="!isFullscreen" width="11" height="11" viewBox="0 0 16 16" fill="currentColor">
+          <path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1h-4zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zM.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5zm15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5z"/>
+        </svg>
+        <svg v-else width="11" height="11" viewBox="0 0 16 16" fill="currentColor">
+          <path d="M5.5 0a.5.5 0 0 1 .5.5v4A1.5 1.5 0 0 1 4.5 6h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5zm5 0a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 10 4.5v-4a.5.5 0 0 1 .5-.5zM0 10.5a.5.5 0 0 1 1 0v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4zm10 1a1.5 1.5 0 0 1 1.5-1.5h4a.5.5 0 0 1 0 1h-4a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4z"/>
+        </svg>
+      </button>
+
       <button class="ctrl-btn close" @click="quit" title="Close">
         <svg width="10" height="10" viewBox="0 0 10 10">
           <line x1="0" y1="0" x2="10" y2="10" stroke="currentColor" stroke-width="1.5"/>
@@ -77,9 +89,18 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { Settings, Bell, Sun, Moon, Monitor } from 'lucide-vue-next'
-import { WindowMinimise, WindowMaximise, WindowUnmaximise, WindowIsMaximised, Quit } from '../../wailsjs/runtime/runtime.js'
+import {
+  WindowMinimise,
+  WindowToggleMaximise,
+  WindowIsMaximised,
+  WindowFullscreen,
+  WindowUnfullscreen,
+  WindowIsFullscreen,
+  Quit
+} from '../../wailsjs/runtime/runtime.js'
 
 const isMaximized = ref(false)
+const isFullscreen = ref(false)
 const showSettingsMenu = ref(false)
 const currentTheme = ref('light')
 
@@ -92,21 +113,46 @@ function setTheme(theme) {
   }
 }
 
-async function checkMaximized() {
-  isMaximized.value = await WindowIsMaximised()
-}
-
 function minimise() {
   WindowMinimise()
 }
 
-async function toggleMaximise() {
-  if (isMaximized.value) {
-    await WindowUnmaximise()
-  } else {
-    await WindowMaximise()
+async function checkWindowState() {
+  try {
+    isMaximized.value = await WindowIsMaximised()
+    isFullscreen.value = await WindowIsFullscreen()
+  } catch (e) {
+    // ignore
   }
-  isMaximized.value = !isMaximized.value
+}
+
+async function toggleMaximise() {
+  try {
+    if (isFullscreen.value) {
+      WindowUnfullscreen()
+      isFullscreen.value = false
+    }
+    WindowToggleMaximise()
+    setTimeout(checkWindowState, 150)
+  } catch (err) {
+    console.error('Maximize toggle error:', err)
+  }
+}
+
+async function toggleFullscreen() {
+  try {
+    const full = await WindowIsFullscreen()
+    if (full || isFullscreen.value) {
+      WindowUnfullscreen()
+      isFullscreen.value = false
+    } else {
+      WindowFullscreen()
+      isFullscreen.value = true
+    }
+    setTimeout(checkWindowState, 150)
+  } catch (err) {
+    console.error('Fullscreen toggle error:', err)
+  }
 }
 
 function quit() {
@@ -114,7 +160,8 @@ function quit() {
 }
 
 onMounted(() => {
-  checkMaximized()
+  checkWindowState()
+  window.addEventListener('resize', checkWindowState)
 })
 </script>
 
@@ -187,7 +234,8 @@ onMounted(() => {
   color: #fff;
 }
 
-.ctrl-btn.maximise:hover {
+.ctrl-btn.maximise:hover,
+.ctrl-btn.fullscreen:hover {
   background: rgba(255, 165, 0, 0.15);
   color: #ff8c00;
 }
