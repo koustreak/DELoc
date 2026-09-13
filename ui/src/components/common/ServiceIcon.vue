@@ -14,6 +14,8 @@
     <img v-else-if="normalizedName === 'postgresql' || normalizedName === 'postgres'" :src="postgresIcon" alt="PostgreSQL" class="w-full h-full object-contain" />
     <img v-else-if="normalizedName === 'mongodb' || normalizedName === 'mongo'" :src="mongodbIcon" alt="MongoDB" class="w-full h-full object-contain" />
     <img v-else-if="normalizedName === 'neo4j'" :src="neo4jIcon" alt="Neo4j" class="w-full h-full object-contain" />
+    <img v-else-if="normalizedName === 'zeppelin' || normalizedName === 'apache zeppelin'" :src="zeppelinIcon" alt="Apache Zeppelin" class="w-full h-full object-contain" />
+    <img v-else-if="normalizedName === 'jupyter' || normalizedName === 'jupyterlab' || normalizedName === 'jupyter lab' || normalizedName === 'jupyter notebook'" :src="jupyterIcon" alt="JupyterLab" class="w-full h-full object-contain" />
 
     <!-- Apache Ozone -->
     <svg v-else-if="normalizedName === 'ozone'" viewBox="0 0 128 128" class="w-full h-full">
@@ -56,6 +58,8 @@ import nifiIcon from '../../assets/icons/nifi.svg'
 import postgresIcon from '../../assets/icons/postgres.svg'
 import mongodbIcon from '../../assets/icons/mongodb.svg'
 import neo4jIcon from '../../assets/icons/neo4j.svg'
+import zeppelinIcon from '../../assets/icons/zeppelin.svg'
+import jupyterIcon from '../../assets/icons/jupyter.svg'
 
 const props = defineProps({
   name: {
