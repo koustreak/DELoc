@@ -337,6 +337,17 @@ of <template>
                   </button>
                 </div>
 
+                <!-- Warning when Dynamic Allocation is Disabled -->
+                <div v-if="!configForm.dynamic" class="flex items-start gap-2.5 p-3 bg-amber-50 border border-amber-200/80 rounded-lg text-amber-900 text-xs transition-all">
+                  <CircleAlert class="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                  <div class="space-y-0.5">
+                    <span class="font-semibold text-amber-900">Manual Resource Allocation Active</span>
+                    <p class="text-[11px] text-amber-700 leading-normal">
+                      Dynamic auto-scaling is turned off. Setting fixed CPU or memory limits too low can trigger container crashes (OOM kills), while setting them too high may impact system performance.
+                    </p>
+                  </div>
+                </div>
+
                 <!-- CPU & Memory (greyed when dynamic) -->
                 <div class="grid grid-cols-2 gap-3">
                   <!-- CPU Cores -->
@@ -444,6 +455,7 @@ of <template>
 
                 <!-- HDFS Tuning -->
                 <div v-if="selectedService.name === 'HDFS'" class="space-y-3.5">
+                  <!-- DataNodes Count -->
                   <div class="bg-slate-50/80 p-3.5 rounded-lg border border-slate-200/80 space-y-2.5">
                     <div class="flex items-center justify-between">
                       <label class="text-xs font-semibold text-slate-700 uppercase tracking-wide">DataNodes Count</label>
@@ -452,11 +464,12 @@ of <template>
                     <input type="range" min="1" max="3" step="1" v-model.number="serviceConfigs.HDFS.dataNodes" class="w-full accent-blue-600 cursor-pointer" />
                     <div class="flex justify-between text-[10px] text-slate-400 font-mono">
                       <span>1 (Minimal Dev)</span>
-                      <span>2</span>
+                      <span>2 (Balanced)</span>
                       <span>3 (Resilient Cluster)</span>
                     </div>
                   </div>
 
+                  <!-- Topology: Replicas & Block Size -->
                   <div class="grid grid-cols-2 gap-3">
                     <div class="bg-slate-50/80 p-3 rounded-lg border border-slate-200/80">
                       <label class="block text-[11px] font-semibold text-slate-700 mb-1">Replication Factor</label>
@@ -476,12 +489,96 @@ of <template>
                     </div>
                   </div>
 
-                  <div class="flex items-center justify-between p-3 bg-slate-50/80 border border-slate-200/80 rounded-lg">
-                    <div>
-                      <div class="text-xs font-semibold text-slate-700">Enable WebHDFS REST API</div>
-                      <div class="text-[10px] text-slate-500">Allow HTTP REST access to HDFS filesystem</div>
+                  <!-- JVM Heap & Trash Retention -->
+                  <div class="grid grid-cols-2 gap-3">
+                    <div class="bg-slate-50/80 p-3 rounded-lg border border-slate-200/80">
+                      <div class="flex items-center gap-1 text-[11px] font-semibold text-slate-700 mb-1">
+                        <Cpu class="w-3 h-3 text-slate-500" />
+                        <span>Hadoop JVM Heap</span>
+                      </div>
+                      <select v-model="serviceConfigs.HDFS.jvmHeap" class="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded-md bg-white text-slate-700 font-mono">
+                        <option value="512M">512 MB (Lightweight)</option>
+                        <option value="1024M">1024 MB (Default Dev)</option>
+                        <option value="2048M">2048 MB (Heavy ETL)</option>
+                      </select>
                     </div>
-                    <input type="checkbox" v-model="serviceConfigs.HDFS.webhdfs" class="w-4 h-4 rounded text-blue-600 accent-blue-600 cursor-pointer" />
+                    <div class="bg-slate-50/80 p-3 rounded-lg border border-slate-200/80">
+                      <div class="flex items-center gap-1 text-[11px] font-semibold text-slate-700 mb-1">
+                        <HardDrive class="w-3 h-3 text-slate-500" />
+                        <span>Trash Retention</span>
+                      </div>
+                      <select v-model.number="serviceConfigs.HDFS.trashInterval" class="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded-md bg-white text-slate-700 font-mono">
+                        <option :value="0">0 min (Instant Purge / Save Disk)</option>
+                        <option :value="60">60 mins (1 Hour)</option>
+                        <option :value="1440">1440 mins (1 Day)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <!-- Permission Enforcement Toggle -->
+                  <div class="flex items-center justify-between p-3 bg-slate-50/80 border border-slate-200/80 rounded-lg">
+                    <div class="pr-2">
+                      <div class="flex items-center gap-1.5">
+                        <span class="text-xs font-semibold text-slate-700">Enforce File Permissions</span>
+                        <span :class="['text-[10px] px-1.5 py-0.2 rounded font-mono', serviceConfigs.HDFS.permissionsEnabled ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700 font-semibold']">
+                          {{ serviceConfigs.HDFS.permissionsEnabled ? 'Strict ACLs' : 'Permissive (Dev)' }}
+                        </span>
+                      </div>
+                      <div class="text-[10px] text-slate-500 mt-0.5">
+                        {{ serviceConfigs.HDFS.permissionsEnabled ? 'Enforces POSIX file ownership and supergroup permissions' : 'Disables strict checking so Spark/Trino/Hive can read/write freely without permission errors' }}
+                      </div>
+                    </div>
+                    <input type="checkbox" v-model="serviceConfigs.HDFS.permissionsEnabled" class="w-4 h-4 rounded text-blue-600 accent-blue-600 cursor-pointer shrink-0" />
+                  </div>
+
+                  <!-- WebHDFS REST API & CORS -->
+                  <div class="space-y-2 p-3 bg-slate-50/80 border border-slate-200/80 rounded-lg">
+                    <div class="flex items-center justify-between">
+                      <div>
+                        <div class="text-xs font-semibold text-slate-700">Enable WebHDFS REST API</div>
+                        <div class="text-[10px] text-slate-500">Allow HTTP REST filesystem operations via port 9870</div>
+                      </div>
+                      <input type="checkbox" v-model="serviceConfigs.HDFS.webhdfs" class="w-4 h-4 rounded text-blue-600 accent-blue-600 cursor-pointer" />
+                    </div>
+
+                    <div v-if="serviceConfigs.HDFS.webhdfs" class="pt-2 border-t border-slate-200/60 flex items-center justify-between">
+                      <div>
+                        <div class="text-xs font-medium text-slate-700">Browser CORS Support</div>
+                        <div class="text-[10px] text-slate-400">Allow web apps and browser notebooks to query WebHDFS directly</div>
+                      </div>
+                      <input type="checkbox" v-model="serviceConfigs.HDFS.webhdfsCors" class="w-4 h-4 rounded text-blue-600 accent-blue-600 cursor-pointer" />
+                    </div>
+                  </div>
+
+                  <!-- Bootstrap Common Directories -->
+                  <div class="p-3 bg-slate-50/80 border border-slate-200/80 rounded-lg space-y-2">
+                    <div>
+                      <div class="text-xs font-semibold text-slate-700">Bootstrap Common Directories</div>
+                      <div class="text-[10px] text-slate-500">Auto-create essential HDFS paths during startup so ecosystem tools work immediately</div>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
+                      <label class="flex items-center gap-2 p-2 rounded bg-white border border-slate-200 text-xs cursor-pointer hover:bg-slate-50/80 transition-colors">
+                        <input type="checkbox" v-model="serviceConfigs.HDFS.bootstrapDirs.tmp" class="w-3.5 h-3.5 rounded text-blue-600 accent-blue-600 cursor-pointer" />
+                        <div>
+                          <div class="font-mono font-medium text-slate-800 text-[11px]">/tmp</div>
+                          <div class="text-[9px] text-slate-400">chmod 777 for jobs</div>
+                        </div>
+                      </label>
+                      <label class="flex items-center gap-2 p-2 rounded bg-white border border-slate-200 text-xs cursor-pointer hover:bg-slate-50/80 transition-colors">
+                        <input type="checkbox" v-model="serviceConfigs.HDFS.bootstrapDirs.hiveWarehouse" class="w-3.5 h-3.5 rounded text-blue-600 accent-blue-600 cursor-pointer" />
+                        <div>
+                          <div class="font-mono font-medium text-slate-800 text-[11px]">/user/hive/warehouse</div>
+                          <div class="text-[9px] text-slate-400">Hive Metastore data</div>
+                        </div>
+                      </label>
+                      <label class="flex items-center gap-2 p-2 rounded bg-white border border-slate-200 text-xs cursor-pointer hover:bg-slate-50/80 transition-colors">
+                        <input type="checkbox" v-model="serviceConfigs.HDFS.bootstrapDirs.sparkEvents" class="w-3.5 h-3.5 rounded text-blue-600 accent-blue-600 cursor-pointer" />
+                        <div>
+                          <div class="font-mono font-medium text-slate-800 text-[11px]">/spark-events</div>
+                          <div class="text-[9px] text-slate-400">Spark History Server</div>
+                        </div>
+                      </label>
+                    </div>
                   </div>
                 </div>
 
@@ -1458,6 +1555,15 @@ const serviceConfigs = ref({
     replicationFactor: 1,
     blockSize: '64MB',
     webhdfs: true,
+    webhdfsCors: true,
+    permissionsEnabled: false,
+    jvmHeap: '1024M',
+    trashInterval: 0,
+    bootstrapDirs: {
+      tmp: true,
+      hiveWarehouse: true,
+      sparkEvents: true,
+    },
   },
   Kafka: {
     mode: 'kraft',
@@ -1537,7 +1643,7 @@ const configForm = ref({
   cpuCores: 1,
   memory: '512',
   memoryUnit: 'MB',
-  dynamic: false,
+  dynamic: true,
 })
 
 // Active repository currently selected/targeted
@@ -1817,7 +1923,7 @@ function openConfig(service) {
     cpuCores: res.cpu,
     memory: res.mem,
     memoryUnit: res.unit,
-    dynamic: false,
+    dynamic: true,
   }
 
   configTab.value = 'resources'
