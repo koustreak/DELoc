@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os/exec"
 	"strings"
 	"sync"
 	"time"
@@ -128,4 +129,49 @@ func (s *Service) FetchDockerTags(rawRepo string) ([]string, error) {
 	s.mu.Unlock()
 
 	return tags, nil
+}
+
+// OpenTerminal launches an external terminal emulator on the host desktop connected to the container via docker exec.
+// It auto-detects installed terminal emulators (gnome-terminal, x-terminal-emulator, kgx, ptyxis, konsole, xfce4-terminal, alacritty, kitty, xterm).
+func (s *Service) OpenTerminal(containerName string) error {
+	clean := strings.TrimSpace(containerName)
+	if clean == "" {
+		return fmt.Errorf("container name cannot be empty")
+	}
+
+	// Verify docker CLI is installed
+	if _, err := exec.LookPath("docker"); err != nil {
+		return fmt.Errorf("docker command not found on host system: %w", err)
+	}
+
+	// Shell command to run: try bash first, fallback to sh. If it exits with error, pause so user sees why.
+	dockerCmd := fmt.Sprintf("docker exec -it %s sh -c 'command -v bash >/dev/null 2>&1 && exec bash || exec sh' || (echo ''; echo 'Process exited. Press Enter to close...'; read _)", clean)
+
+	type termConfig struct {
+		bin  string
+		args []string
+	}
+
+	candidates := []termConfig{
+		{bin: "gnome-terminal", args: []string{"--", "bash", "-c", dockerCmd}},
+		{bin: "x-terminal-emulator", args: []string{"-e", "bash", "-c", dockerCmd}},
+		{bin: "kgx", args: []string{"-e", fmt.Sprintf("bash -c %q", dockerCmd)}},
+		{bin: "ptyxis", args: []string{"--", "bash", "-c", dockerCmd}},
+		{bin: "konsole", args: []string{"-e", "bash", "-c", dockerCmd}},
+		{bin: "xfce4-terminal", args: []string{"-e", fmt.Sprintf("bash -c %q", dockerCmd)}},
+		{bin: "alacritty", args: []string{"-e", "bash", "-c", dockerCmd}},
+		{bin: "kitty", args: []string{"bash", "-c", dockerCmd}},
+		{bin: "xterm", args: []string{"-e", "bash", "-c", dockerCmd}},
+	}
+
+	for _, cand := range candidates {
+		if path, err := exec.LookPath(cand.bin); err == nil && path != "" {
+			cmd := exec.Command(cand.bin, cand.args...)
+			if err := cmd.Start(); err == nil {
+				return nil
+			}
+		}
+	}
+
+	return fmt.Errorf("no supported terminal emulator found (tried gnome-terminal, x-terminal-emulator, kgx, konsole, xterm)")
 }

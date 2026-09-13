@@ -1,4 +1,4 @@
-<template>
+of <template>
   <div class="flex flex-col h-full bg-slate-50/50">
     <main class="flex-1 overflow-y-auto p-6">
 
@@ -20,25 +20,144 @@
       </div>
 
       <!-- Services Grid -->
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-5">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         <div
           v-for="service in filteredServices"
           :key="service.name"
-          class="bg-[#f8fafc] rounded-md border border-slate-300 shadow-[inset_0_1px_0_rgba(255,255,255,1),0_4px_6px_-2px_rgba(0,0,0,0.05),0_8px_12px_-3px_rgba(0,0,0,0.03)] flex flex-col p-4 transition-all hover:-translate-y-1 hover:shadow-[inset_0_1px_0_rgba(255,255,255,1),0_8px_12px_-3px_rgba(60,120,216,0.15)] group"
+          class="bg-[#f8fafc] rounded-md border shadow-[inset_0_1px_0_rgba(255,255,255,1),0_4px_6px_-2px_rgba(0,0,0,0.05),0_8px_12px_-3px_rgba(0,0,0,0.03)] flex flex-col p-4 transition-all hover:-translate-y-1 hover:shadow-[inset_0_1px_0_rgba(255,255,255,1),0_8px_12px_-3px_rgba(60,120,216,0.15)] group"
+          :class="service.status === 'Running' ? 'border-emerald-400/80 ring-1 ring-emerald-400/30' : 'border-slate-300'"
         >
-          <!-- Logo & Name -->
-          <div class="flex items-end gap-2.5 mb-3 text-slate-800 border-b border-slate-50/0 pb-2">
-            <ServiceIcon :name="service.name" class="w-8 h-8 drop-shadow-sm" />
-            <h3 class="text-[17px] font-semibold leading-tight tracking-tight">{{ service.name }}</h3>
+          <!-- Logo, Name & Actions -->
+          <div class="flex items-start justify-between gap-2 mb-2 pb-2.5 border-b border-slate-200/60">
+            <div
+              @click="handleDetailsClick(service)"
+              class="flex items-center gap-2.5 min-w-0 cursor-pointer group/title hover:opacity-90 transition-opacity"
+              title="Click to view details"
+            >
+              <ServiceIcon :name="service.name" class="w-8 h-8 drop-shadow-sm flex-shrink-0" />
+              <div class="min-w-0">
+                <h3 class="text-[15px] font-bold text-slate-800 leading-tight truncate group-hover/title:text-blue-600 transition-colors">
+                  {{ service.name }}
+                </h3>
+                <div class="text-[10px] text-slate-400 font-mono font-medium leading-none mt-1">{{ service.version }}</div>
+              </div>
+            </div>
+
+            <!-- Top Right: Terminal + Details Action -->
+            <div class="flex items-center gap-1.5 flex-shrink-0">
+              <button
+                v-if="service.status === 'Running'"
+                @click.stop="launchTerminal(service)"
+                :title="'Open terminal into ' + service.containerName"
+                class="p-1 rounded text-slate-400 hover:text-emerald-700 hover:bg-emerald-50 border border-transparent hover:border-emerald-200 transition-all cursor-pointer"
+              >
+                <Terminal class="w-3.5 h-3.5" />
+              </button>
+
+              <button
+                @click.stop="handleDetailsClick(service)"
+                title="Click for details"
+                :class="[
+                  'inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold border transition-all cursor-pointer select-none',
+                  service.status === 'Running'
+                    ? 'bg-emerald-50 border-emerald-300 text-emerald-700 hover:bg-emerald-100'
+                    : notRunningNotice[service.name]
+                      ? 'bg-amber-50 border-amber-300 text-amber-700'
+                      : 'bg-slate-100 border-slate-200 text-slate-600 hover:bg-slate-200/70 hover:text-slate-800'
+                ]"
+              >
+                <template v-if="notRunningNotice[service.name]">
+                  <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping"></span>
+                  Service is not running
+                </template>
+                <template v-else-if="service.status === 'Running'">
+                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                  Details
+                </template>
+                <template v-else>
+                  Details
+                </template>
+              </button>
+            </div>
           </div>
-          <!-- Version -->
-          <div class="text-[11px] text-slate-500 mb-2 font-mono font-medium">{{ service.version }}</div>
+
           <!-- Description -->
-          <div class="text-xs text-slate-600 mb-5 leading-normal flex-1">{{ service.description }}</div>
+          <div class="text-xs text-slate-600 mb-3 leading-normal line-clamp-2 h-8">{{ service.description }}</div>
+
+          <!-- Endpoints & Ports Section -->
+          <div class="mb-4 rounded-md border border-slate-200/90 bg-white/90 p-2 shadow-[0_1px_2px_rgba(0,0,0,0.03)] flex flex-col gap-1.5">
+            <div class="flex items-center justify-between text-[10px] font-bold tracking-wider uppercase text-slate-400 px-0.5">
+              <span>Endpoints &amp; Ports</span>
+              <span class="text-[9px] font-mono text-slate-400 font-normal">
+                {{ service.endpoints?.length || 0 }} {{ (service.endpoints?.length === 1) ? 'port' : 'ports' }}
+              </span>
+            </div>
+
+            <div class="space-y-1">
+              <div
+                v-for="(ep, idx) in service.endpoints"
+                :key="idx"
+                class="flex items-center justify-between gap-1.5 px-2 py-1 rounded bg-slate-50 hover:bg-slate-100/90 border border-slate-200/60 text-xs transition-colors"
+              >
+                <!-- Left: Protocol tag + Name -->
+                <div class="flex items-center gap-1.5 min-w-0 flex-1">
+                  <span
+                    :class="[
+                      'text-[9px] font-bold uppercase px-1 py-0.5 rounded leading-none tracking-wider font-mono',
+                      ep.type === 'http' ? 'bg-blue-100 text-blue-700 border border-blue-200/50' : 'bg-purple-100 text-purple-700 border border-purple-200/50'
+                    ]"
+                  >
+                    {{ ep.type }}
+                  </span>
+                  <span class="text-[11px] font-medium text-slate-700 truncate" :title="ep.label">
+                    {{ ep.label }}
+                  </span>
+                </div>
+
+                <!-- Right: Port/Host + Actions -->
+                <div class="flex items-center gap-1 flex-shrink-0">
+                  <span class="font-mono text-[10px] text-slate-500 font-medium">
+                    :{{ ep.port }}
+                  </span>
+
+                  <!-- Open in browser for HTTP endpoints -->
+                  <button
+                    v-if="ep.type === 'http'"
+                    @click="openEndpoint(ep.url)"
+                    class="p-1 rounded hover:bg-blue-100 text-slate-400 hover:text-blue-600 transition-colors"
+                    :title="'Open ' + ep.url + ' in browser'"
+                  >
+                    <ExternalLink class="w-3 h-3" />
+                  </button>
+
+                  <!-- Copy button -->
+                  <button
+                    @click="copyEndpoint(ep.url, service.name + '-' + idx)"
+                    class="p-1 rounded hover:bg-slate-200 text-slate-400 hover:text-slate-700 transition-colors"
+                    :title="'Copy ' + ep.url"
+                  >
+                    <Check v-if="copiedKey === (service.name + '-' + idx)" class="w-3 h-3 text-emerald-600" />
+                    <Copy v-else class="w-3 h-3" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <!-- Action Buttons -->
           <div class="flex items-center gap-2 mt-auto">
-            <button class="flex-1 flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white py-1.5 rounded text-[11px] font-semibold shadow-sm shadow-emerald-900/20 transition-all active:scale-95">
-              <Play class="w-2.5 h-2.5" fill="currentColor" /> Start
+            <button
+              @click="toggleService(service)"
+              :class="[
+                'flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded text-[11px] font-semibold transition-all active:scale-95 shadow-sm',
+                service.status === 'Running'
+                  ? 'bg-rose-600 hover:bg-rose-700 text-white shadow-rose-900/20'
+                  : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-900/20'
+              ]"
+            >
+              <Square v-if="service.status === 'Running'" class="w-2.5 h-2.5" fill="currentColor" />
+              <Play v-else class="w-2.5 h-2.5" fill="currentColor" />
+              {{ service.status === 'Running' ? 'Stop' : 'Start' }}
             </button>
             <button
               @click="openConfig(service)"
@@ -282,117 +401,532 @@
         </div>
       </Transition>
     </Teleport>
+
+    <!-- ── Service Details & Inspection Modal ── -->
+    <Teleport to="body">
+      <Transition name="modal">
+        <div
+          v-if="showDetailsModal && detailsService"
+          class="fixed inset-0 z-[200] flex items-center justify-center bg-black/40 backdrop-blur-[2px] p-4"
+          @click.self="showDetailsModal = false"
+        >
+          <div class="bg-white rounded-xl shadow-2xl border border-slate-200 w-[640px] max-w-[95vw] flex flex-col overflow-hidden max-h-[88vh]">
+
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100 bg-slate-50">
+              <div class="flex items-center gap-3">
+                <ServiceIcon :name="detailsService.name" class="w-8 h-8 drop-shadow-sm flex-shrink-0" />
+                <div>
+                  <div class="flex items-center gap-2">
+                    <h3 class="font-bold text-slate-800 text-base leading-tight">{{ detailsService.name }}</h3>
+                    <span class="text-[10px] font-mono bg-slate-200/80 text-slate-600 px-1.5 py-0.5 rounded font-medium">
+                      {{ detailsService.version }}
+                    </span>
+                    <span
+                      :class="[
+                        'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border',
+                        detailsService.status === 'Running'
+                          ? 'bg-emerald-50 border-emerald-300 text-emerald-700'
+                          : 'bg-slate-100 border-slate-200 text-slate-500'
+                      ]"
+                    >
+                      <span
+                        :class="[
+                          'w-1.5 h-1.5 rounded-full',
+                          detailsService.status === 'Running' ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'
+                        ]"
+                      ></span>
+                      {{ detailsService.status }}
+                    </span>
+                  </div>
+                  <p class="text-xs text-slate-500 mt-0.5">{{ detailsService.description }}</p>
+                </div>
+              </div>
+              <button
+                @click="showDetailsModal = false"
+                class="text-slate-400 hover:text-slate-700 transition-colors p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer"
+              >
+                <X class="w-4 h-4" />
+              </button>
+            </div>
+
+            <!-- Terminal Exec Action Banner -->
+            <div class="px-5 py-3 bg-slate-900 text-slate-200 border-b border-slate-800">
+              <div class="flex items-center justify-between gap-3">
+                <div class="flex items-center gap-2 min-w-0 flex-1">
+                  <Terminal class="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                  <code class="text-xs font-mono text-emerald-300 truncate">
+                    docker exec -it {{ detailsService.containerName }} /bin/bash
+                  </code>
+                </div>
+                <div class="flex items-center gap-2 flex-shrink-0">
+                  <button
+                    @click="copyEndpoint('docker exec -it ' + detailsService.containerName + ' /bin/bash', 'modal-exec')"
+                    class="px-2.5 py-1 text-[11px] bg-slate-800 hover:bg-slate-700 text-slate-300 rounded font-medium transition-colors flex items-center gap-1 border border-slate-700 cursor-pointer"
+                    title="Copy shell command"
+                  >
+                    <Check v-if="copiedKey === 'modal-exec'" class="w-3 h-3 text-emerald-400" />
+                    <Copy v-else class="w-3 h-3" />
+                    <span>{{ copiedKey === 'modal-exec' ? 'Copied' : 'Copy' }}</span>
+                  </button>
+                  <button
+                    @click="launchTerminal(detailsService)"
+                    :disabled="isLaunchingTerminal"
+                    class="px-3 py-1 text-[11px] bg-emerald-600 hover:bg-emerald-500 text-white rounded font-semibold transition-all shadow-sm flex items-center gap-1.5 active:scale-95 disabled:opacity-50 cursor-pointer"
+                  >
+                    <Terminal class="w-3 h-3" />
+                    <span>Open Terminal</span>
+                  </button>
+                </div>
+              </div>
+              <!-- Feedback status -->
+              <div v-if="terminalStatus" class="mt-2 text-[11px] text-emerald-400 font-mono flex items-center gap-1">
+                <span>✓ {{ terminalStatus }}</span>
+              </div>
+              <div v-else-if="detailsService.status === 'Stopped'" class="mt-1 text-[10px] text-amber-400/90 font-mono">
+                Note: Container is currently stopped. Start container to exec into shell.
+              </div>
+            </div>
+
+            <!-- Modal Content / Body -->
+            <div class="px-5 py-4 space-y-4 overflow-y-auto max-h-[60vh]">
+              
+              <!-- Container Specifications -->
+              <div>
+                <div class="text-xs font-semibold text-slate-700 uppercase tracking-wide mb-2">Container Specs</div>
+                <div class="grid grid-cols-2 gap-2 text-xs">
+                  <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-200/80">
+                    <div class="text-[10px] font-medium text-slate-400 uppercase">Container Name</div>
+                    <div class="font-mono font-medium text-slate-800 text-xs mt-0.5 truncate flex items-center justify-between">
+                      <span>{{ detailsService.containerName }}</span>
+                      <button
+                        @click="copyEndpoint(detailsService.containerName, 'name-copy')"
+                        class="text-slate-400 hover:text-slate-600 p-0.5 cursor-pointer"
+                        title="Copy container name"
+                      >
+                        <Check v-if="copiedKey === 'name-copy'" class="w-2.5 h-2.5 text-emerald-600" />
+                        <Copy v-else class="w-2.5 h-2.5" />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-200/80">
+                    <div class="text-[10px] font-medium text-slate-400 uppercase">Docker Image</div>
+                    <div class="font-mono font-medium text-slate-800 text-xs mt-0.5 truncate">
+                      {{ detailsService.repos?.[0] }}:{{ detailsService.defaultTag }}
+                    </div>
+                  </div>
+
+                  <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-200/80">
+                    <div class="text-[10px] font-medium text-slate-400 uppercase">Network</div>
+                    <div class="font-mono text-slate-700 text-xs mt-0.5">{{ detailsService.network || 'deloc-net (bridge)' }}</div>
+                  </div>
+
+                  <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-200/80">
+                    <div class="text-[10px] font-medium text-slate-400 uppercase">Process Architecture</div>
+                    <div class="font-mono text-slate-700 text-xs mt-0.5">linux / amd64</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Endpoints & Ports -->
+              <div>
+                <div class="text-xs font-semibold text-slate-700 uppercase tracking-wide mb-2 flex items-center justify-between">
+                  <span>Endpoints &amp; Ports</span>
+                  <span class="text-[10px] font-mono text-slate-400 normal-case">{{ detailsService.endpoints?.length || 0 }} mapped</span>
+                </div>
+                <div class="space-y-1.5">
+                  <div
+                    v-for="(ep, idx) in detailsService.endpoints"
+                    :key="idx"
+                    class="flex items-center justify-between p-2 rounded-lg bg-slate-50 border border-slate-200 text-xs"
+                  >
+                    <div class="flex items-center gap-2 min-w-0">
+                      <span
+                        :class="[
+                          'text-[9px] font-bold uppercase px-1.5 py-0.5 rounded leading-none font-mono',
+                          ep.type === 'http' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'
+                        ]"
+                      >
+                        {{ ep.type }}
+                      </span>
+                      <div>
+                        <div class="font-medium text-slate-800">{{ ep.label }}</div>
+                        <div class="font-mono text-[11px] text-slate-500">{{ ep.url }}</div>
+                      </div>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                      <button
+                        v-if="ep.type === 'http'"
+                        @click="openEndpoint(ep.url)"
+                        class="px-2 py-1 text-xs bg-white hover:bg-blue-50 border border-slate-200 hover:border-blue-300 text-blue-600 rounded font-medium flex items-center gap-1 transition-colors cursor-pointer"
+                      >
+                        <ExternalLink class="w-3 h-3" />
+                        <span>Open</span>
+                      </button>
+                      <button
+                        @click="copyEndpoint(ep.url, 'modal-ep-' + idx)"
+                        class="px-2 py-1 text-xs bg-white hover:bg-slate-100 border border-slate-200 text-slate-600 rounded font-medium flex items-center gap-1 transition-colors cursor-pointer"
+                      >
+                        <Check v-if="copiedKey === ('modal-ep-' + idx)" class="w-3 h-3 text-emerald-600" />
+                        <Copy v-else class="w-3 h-3" />
+                        <span>{{ copiedKey === ('modal-ep-' + idx) ? 'Copied' : 'Copy' }}</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Storage & Volume Mounts -->
+              <div v-if="detailsService.volumes?.length">
+                <div class="text-xs font-semibold text-slate-700 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                  <HardDrive class="w-3.5 h-3.5 text-slate-500" />
+                  <span>Volume Mounts</span>
+                </div>
+                <div class="space-y-1">
+                  <div
+                    v-for="(vol, idx) in detailsService.volumes"
+                    :key="idx"
+                    class="p-2 rounded bg-slate-50 border border-slate-200/80 font-mono text-[11px] text-slate-700 flex items-center justify-between"
+                  >
+                    <span>{{ vol }}</span>
+                    <button
+                      @click="copyEndpoint(vol, 'vol-' + idx)"
+                      class="text-slate-400 hover:text-slate-600 cursor-pointer"
+                      title="Copy mount"
+                    >
+                      <Check v-if="copiedKey === ('vol-' + idx)" class="w-2.5 h-2.5 text-emerald-600" />
+                      <Copy v-else class="w-2.5 h-2.5" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Environment Variables -->
+              <div v-if="detailsService.environment?.length">
+                <div class="text-xs font-semibold text-slate-700 uppercase tracking-wide mb-2">Environment Configuration</div>
+                <div class="p-2.5 rounded-lg bg-slate-900 border border-slate-800 text-[11px] font-mono text-emerald-400 space-y-1 max-h-36 overflow-y-auto">
+                  <div v-for="(env, idx) in detailsService.environment" :key="idx" class="truncate">
+                    <span class="text-slate-400">$ </span>{{ env }}
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="flex items-center justify-between px-5 py-3 bg-slate-50 border-t border-slate-100">
+              <button
+                @click="toggleService(detailsService)"
+                :class="[
+                  'flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-semibold transition-all active:scale-95 shadow-sm cursor-pointer',
+                  detailsService.status === 'Running'
+                    ? 'bg-rose-600 hover:bg-rose-700 text-white'
+                    : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                ]"
+              >
+                <Square v-if="detailsService.status === 'Running'" class="w-3 h-3" fill="currentColor" />
+                <Play v-else class="w-3 h-3" fill="currentColor" />
+                <span>{{ detailsService.status === 'Running' ? 'Stop Service' : 'Start Service' }}</span>
+              </button>
+
+              <div class="flex items-center gap-2">
+                <button
+                  @click="openConfigFromDetails(detailsService)"
+                  class="px-3 py-1.5 text-xs font-semibold text-slate-700 bg-white border border-slate-300 rounded hover:bg-slate-100 transition-colors cursor-pointer"
+                >
+                  Configure
+                </button>
+                <button
+                  @click="showDetailsModal = false"
+                  class="px-3.5 py-1.5 text-xs font-semibold text-white bg-slate-800 hover:bg-slate-900 rounded transition-colors cursor-pointer"
+                >
+                  Done
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue'
 import {
-  Search, Layers, Play, X, RefreshCw
+  Search, Layers, Play, Square, X, RefreshCw, ExternalLink, Copy, Check, Terminal, HardDrive
 } from 'lucide-vue-next'
 import ServiceIcon from './common/ServiceIcon.vue'
-import { FetchDockerTags } from '../../wailsjs/go/bindings/Service.js'
+import { FetchDockerTags, OpenTerminal } from '../../wailsjs/go/bindings/Service.js'
+import { BrowserOpenURL, ClipboardSetText } from '../../wailsjs/runtime/runtime.js'
 
 const searchQuery = ref('')
+const copiedKey = ref(null)
 
-const servicesList = [
+const servicesList = ref([
   {
     name: 'HDFS',
     version: 'v3.3.6',
     defaultTag: '3.3.6',
+    status: 'Stopped',
+    containerName: 'deloc-hdfs-namenode',
+    network: 'deloc-net (bridge)',
     description: 'Distributed file system for big data storage.',
-    repos: ['apache/hadoop', 'bde2020/hadoop-namenode']
+    repos: ['apache/hadoop', 'bde2020/hadoop-namenode'],
+    volumes: ['deloc_hdfs_data:/hadoop/dfs/name'],
+    environment: [
+      'CLUSTER_NAME=deloc-hdfs',
+      'CORE_CONF_fs_defaultFS=hdfs://deloc-hdfs-namenode:9000'
+    ],
+    endpoints: [
+      { label: 'NameNode UI', port: 9870, url: 'http://localhost:9870', type: 'http' },
+      { label: 'IPC / RPC', port: 9000, url: 'localhost:9000', type: 'tcp' }
+    ]
   },
   {
     name: 'Kafka',
     version: 'v3.6.1',
     defaultTag: '3.6.1',
+    status: 'Stopped',
+    containerName: 'deloc-kafka',
+    network: 'deloc-net (bridge)',
     description: 'Distributed event streaming platform.',
-    repos: ['apache/kafka', 'bitnami/kafka', 'confluentinc/cp-kafka']
+    repos: ['apache/kafka', 'bitnami/kafka', 'confluentinc/cp-kafka'],
+    volumes: ['deloc_kafka_data:/var/lib/kafka/data'],
+    environment: [
+      'KAFKA_NODE_ID=1',
+      'KAFKA_PROCESS_ROLES=broker,controller',
+      'KAFKA_LISTENERS=PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093'
+    ],
+    endpoints: [
+      { label: 'Broker', port: 9092, url: 'localhost:9092', type: 'tcp' },
+      { label: 'Schema Reg.', port: 8081, url: 'http://localhost:8081', type: 'http' }
+    ]
   },
   {
     name: 'Airflow',
     version: 'v2.8.1',
     defaultTag: '2.8.1',
+    status: 'Stopped',
+    containerName: 'deloc-airflow-webserver',
+    network: 'deloc-net (bridge)',
     description: 'Workflow orchestration tool for data pipelines.',
-    repos: ['apache/airflow', 'bitnami/airflow', 'puckel/docker-airflow']
+    repos: ['apache/airflow', 'bitnami/airflow', 'puckel/docker-airflow'],
+    volumes: [
+      'deloc_airflow_dags:/opt/airflow/dags',
+      'deloc_airflow_logs:/opt/airflow/logs'
+    ],
+    environment: [
+      'AIRFLOW__CORE__EXECUTOR=LocalExecutor',
+      'AIRFLOW__CORE__LOAD_EXAMPLES=False'
+    ],
+    endpoints: [
+      { label: 'Web UI', port: 8080, url: 'http://localhost:8080', type: 'http' }
+    ]
   },
   {
     name: 'Trino',
     version: 'v440',
     defaultTag: '440',
+    status: 'Stopped',
+    containerName: 'deloc-trino',
+    network: 'deloc-net (bridge)',
     description: 'Distributed SQL query engine for big data.',
-    repos: ['trinodb/trino']
+    repos: ['trinodb/trino'],
+    volumes: ['deloc_trino_data:/data/trino'],
+    environment: [
+      'TRINO_SERVER_PORT=8080'
+    ],
+    endpoints: [
+      { label: 'Web UI', port: 8080, url: 'http://localhost:8080', type: 'http' }
+    ]
   },
   {
     name: 'Apache Hive',
     version: 'v4.0.0',
     defaultTag: '4.0.0',
+    status: 'Stopped',
+    containerName: 'deloc-hive-server',
+    network: 'deloc-net (bridge)',
     description: 'Data warehouse software for querying and managing large datasets.',
-    repos: ['apache/hive', 'bde2020/hive']
+    repos: ['apache/hive', 'bde2020/hive'],
+    volumes: ['deloc_hive_warehouse:/opt/hive/data/warehouse'],
+    environment: [
+      'HIVE_SERVER2_THRIFT_PORT=10000',
+      'HIVE_METASTORE_PORT=9083'
+    ],
+    endpoints: [
+      { label: 'JDBC / Thrift', port: 10000, url: 'localhost:10000', type: 'tcp' },
+      { label: 'Metastore', port: 9083, url: 'localhost:9083', type: 'tcp' }
+    ]
   },
   {
     name: 'Cassandra',
     version: 'v4.1.3',
     defaultTag: '4.1.3',
+    status: 'Stopped',
+    containerName: 'deloc-cassandra',
+    network: 'deloc-net (bridge)',
     description: 'Highly scalable distributed NoSQL database.',
-    repos: ['cassandra', 'bitnami/cassandra']
+    repos: ['cassandra', 'bitnami/cassandra'],
+    volumes: ['deloc_cassandra_data:/var/lib/cassandra'],
+    environment: [
+      'CASSANDRA_CLUSTER_NAME=deloc-cluster',
+      'CASSANDRA_DC=datacenter1'
+    ],
+    endpoints: [
+      { label: 'CQL Native', port: 9042, url: 'localhost:9042', type: 'tcp' },
+      { label: 'JMX', port: 7199, url: 'localhost:7199', type: 'tcp' }
+    ]
   },
   {
     name: 'Pinot',
     version: 'v1.0.0',
     defaultTag: '1.0.0',
+    status: 'Stopped',
+    containerName: 'deloc-pinot-controller',
+    network: 'deloc-net (bridge)',
     description: 'Real-time distributed OLAP datastore.',
-    repos: ['apachepinot/pinot']
+    repos: ['apachepinot/pinot'],
+    volumes: ['deloc_pinot_data:/opt/pinot/data'],
+    environment: [
+      'PINOT_CONTROLLER_PORT=9000',
+      'JAVA_OPTS=-Xms512M -Xmx1G'
+    ],
+    endpoints: [
+      { label: 'Controller UI', port: 9000, url: 'http://localhost:9000', type: 'http' },
+      { label: 'Broker Query', port: 8099, url: 'localhost:8099', type: 'tcp' }
+    ]
   },
   {
     name: 'MinIO',
     version: 'RELEASE.2024',
     defaultTag: 'latest',
+    status: 'Stopped',
+    containerName: 'deloc-minio',
+    network: 'deloc-net (bridge)',
     description: 'High performance S3 compatible object storage.',
-    repos: ['minio/minio', 'bitnami/minio']
+    repos: ['minio/minio', 'bitnami/minio'],
+    volumes: ['deloc_minio_data:/data'],
+    environment: [
+      'MINIO_ROOT_USER=minioadmin',
+      'MINIO_ROOT_PASSWORD=minioadmin'
+    ],
+    endpoints: [
+      { label: 'Console UI', port: 9001, url: 'http://localhost:9001', type: 'http' },
+      { label: 'S3 API', port: 9000, url: 'http://localhost:9000', type: 'http' }
+    ]
   },
   {
     name: 'Spark',
     version: 'v3.5.0',
     defaultTag: '3.5.0',
+    status: 'Stopped',
+    containerName: 'deloc-spark-master',
+    network: 'deloc-net (bridge)',
     description: 'Unified analytics engine for large-scale data processing.',
-    repos: ['apache/spark', 'bitnami/spark']
+    repos: ['apache/spark', 'bitnami/spark'],
+    volumes: [
+      'deloc_spark_apps:/opt/spark-apps',
+      'deloc_spark_data:/opt/spark-data'
+    ],
+    environment: [
+      'SPARK_MODE=master',
+      'SPARK_RPC_AUTHENTICATION_ENABLED=no'
+    ],
+    endpoints: [
+      { label: 'Master UI', port: 8080, url: 'http://localhost:8080', type: 'http' },
+      { label: 'Spark RPC', port: 7077, url: 'spark://localhost:7077', type: 'tcp' }
+    ]
   },
   {
     name: 'NiFi',
     version: 'v1.25.0',
     defaultTag: '1.25.0',
+    status: 'Stopped',
+    containerName: 'deloc-nifi',
+    network: 'deloc-net (bridge)',
     description: 'Automates the flow of data between systems.',
-    repos: ['apache/nifi']
+    repos: ['apache/nifi'],
+    volumes: [
+      'deloc_nifi_flowfile:/opt/nifi/nifi-current/flowfile_repository',
+      'deloc_nifi_database:/opt/nifi/nifi-current/database_repository'
+    ],
+    environment: [
+      'NIFI_WEB_HTTPS_PORT=8443',
+      'NIFI_JVM_HEAP_INIT=512m'
+    ],
+    endpoints: [
+      { label: 'Web UI', port: 8443, url: 'https://localhost:8443/nifi', type: 'http' }
+    ]
   },
   {
     name: 'PostgreSQL',
     version: 'v16.2',
     defaultTag: '16.2',
+    status: 'Stopped',
+    containerName: 'deloc-postgres',
+    network: 'deloc-net (bridge)',
     description: 'Powerful, open source object-relational database.',
-    repos: ['postgres', 'bitnami/postgresql']
+    repos: ['postgres', 'bitnami/postgresql'],
+    volumes: ['deloc_postgres_data:/var/lib/postgresql/data'],
+    environment: [
+      'POSTGRES_USER=postgres',
+      'POSTGRES_PASSWORD=postgres',
+      'POSTGRES_DB=deloc'
+    ],
+    endpoints: [
+      { label: 'PostgreSQL', port: 5432, url: 'localhost:5432', type: 'tcp' }
+    ]
   },
   {
     name: 'MongoDB',
     version: 'v7.0.5',
     defaultTag: '7.0.5',
+    status: 'Stopped',
+    containerName: 'deloc-mongodb',
+    network: 'deloc-net (bridge)',
     description: 'Document-oriented NoSQL database system.',
-    repos: ['mongo', 'bitnami/mongodb']
+    repos: ['mongo', 'bitnami/mongodb'],
+    volumes: ['deloc_mongo_data:/data/db'],
+    environment: [
+      'MONGO_INITDB_ROOT_USERNAME=root',
+      'MONGO_INITDB_ROOT_PASSWORD=example'
+    ],
+    endpoints: [
+      { label: 'MongoDB', port: 27017, url: 'localhost:27017', type: 'tcp' }
+    ]
   },
   {
     name: 'Neo4j',
     version: 'v5.17.0',
     defaultTag: '5.17.0',
+    status: 'Stopped',
+    containerName: 'deloc-neo4j',
+    network: 'deloc-net (bridge)',
     description: 'Native graph database designed for connected data.',
-    repos: ['neo4j']
+    repos: ['neo4j'],
+    volumes: [
+      'deloc_neo4j_data:/data',
+      'deloc_neo4j_logs:/logs'
+    ],
+    environment: [
+      'NEO4J_AUTH=neo4j/delocpassword',
+      'NEO4J_PLUGINS=["apoc"]'
+    ],
+    endpoints: [
+      { label: 'Browser UI', port: 7474, url: 'http://localhost:7474', type: 'http' },
+      { label: 'Bolt Protocol', port: 7687, url: 'bolt://localhost:7687', type: 'tcp' }
+    ]
   },
-]
+])
 
 const filteredServices = computed(() => {
-  if (!searchQuery.value) return servicesList
+  if (!searchQuery.value) return servicesList.value
   const q = searchQuery.value.toLowerCase()
-  return servicesList.filter(s =>
+  return servicesList.value.filter(s =>
     s.name.toLowerCase().includes(q) ||
     s.description.toLowerCase().includes(q)
   )
@@ -534,6 +1068,95 @@ function openConfig(service) {
 function applyConfig() {
   // Apply the selected configuration
   showConfigModal.value = false
+}
+
+async function copyEndpoint(text, key) {
+  try {
+    if (typeof ClipboardSetText === 'function') {
+      await ClipboardSetText(text)
+    } else if (navigator.clipboard) {
+      await navigator.clipboard.writeText(text)
+    }
+    copiedKey.value = key
+    setTimeout(() => {
+      if (copiedKey.value === key) {
+        copiedKey.value = null
+      }
+    }, 1800)
+  } catch (err) {
+    console.error('Failed to copy endpoint:', err)
+  }
+}
+
+function openEndpoint(url) {
+  if (typeof BrowserOpenURL === 'function') {
+    BrowserOpenURL(url)
+  } else {
+    window.open(url, '_blank')
+  }
+}
+
+function toggleService(service) {
+  service.status = service.status === 'Running' ? 'Stopped' : 'Running'
+  if (service.status === 'Running' && notRunningNotice.value[service.name]) {
+    notRunningNotice.value[service.name] = false
+  }
+}
+
+// ── Service Details & Inspection State ──
+const showDetailsModal = ref(false)
+const detailsService = ref(null)
+const isLaunchingTerminal = ref(false)
+const terminalStatus = ref('')
+const notRunningNotice = ref({})
+
+function handleDetailsClick(service) {
+  if (service.status !== 'Running') {
+    notRunningNotice.value[service.name] = true
+    setTimeout(() => {
+      if (notRunningNotice.value) {
+        notRunningNotice.value[service.name] = false
+      }
+    }, 2500)
+    return
+  }
+  openDetails(service)
+}
+
+function openDetails(service) {
+  detailsService.value = service
+  terminalStatus.value = ''
+  showDetailsModal.value = true
+}
+
+function openConfigFromDetails(service) {
+  showDetailsModal.value = false
+  openConfig(service)
+}
+
+async function launchTerminal(service) {
+  if (!service || !service.containerName) return
+  isLaunchingTerminal.value = true
+  terminalStatus.value = ''
+  try {
+    if (typeof OpenTerminal === 'function') {
+      await OpenTerminal(service.containerName)
+      terminalStatus.value = `Terminal launched for ${service.containerName}`
+      setTimeout(() => {
+        if (terminalStatus.value.includes(service.containerName)) {
+          terminalStatus.value = ''
+        }
+      }, 4000)
+    } else {
+      console.warn('OpenTerminal backend binding not available')
+      terminalStatus.value = 'Terminal binding not available in web preview.'
+    }
+  } catch (err) {
+    console.error('Failed to open terminal:', err)
+    terminalStatus.value = err?.message || 'Could not launch terminal.'
+  } finally {
+    isLaunchingTerminal.value = false
+  }
 }
 </script>
 
