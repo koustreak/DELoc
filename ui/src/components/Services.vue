@@ -207,6 +207,21 @@ of <template>
                 <SlidersHorizontal class="w-3.5 h-3.5" />
                 <span>Service Tuning</span>
               </button>
+
+              <button
+                v-if="selectedService?.name === 'HDFS'"
+                type="button"
+                @click="configTab = 'mounts'"
+                :class="[
+                  'px-3 py-2 text-xs font-semibold border-b-2 -mb-px transition-colors flex items-center gap-1.5 cursor-pointer',
+                  configTab === 'mounts'
+                    ? 'border-blue-600 text-blue-600 bg-white rounded-t'
+                    : 'border-transparent text-slate-500 hover:text-slate-700'
+                ]"
+              >
+                <HardDrive class="w-3.5 h-3.5" />
+                <span>Storage &amp; Mounts</span>
+              </button>
             </div>
 
             <!-- Modal Body -->
@@ -661,6 +676,252 @@ of <template>
                 </div>
 
               </div>
+
+              <!-- TAB 3: Storage & Mounts (HDFS) -->
+              <div v-if="configTab === 'mounts' && selectedService?.name === 'HDFS'" class="space-y-4">
+                
+                <!-- Info Banner -->
+                <div class="p-3 bg-blue-50/70 border border-blue-200/80 rounded-lg flex items-start gap-2.5">
+                  <HardDrive class="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
+                  <div class="text-xs text-blue-900 leading-relaxed">
+                    <span class="font-semibold">HDFS Storage Architecture:</span> Configure where NameNode metadata and DataNode raw block replicas are persisted, and mount local host directories for direct file ingestion.
+                  </div>
+                </div>
+
+                <!-- 1. HDFS Core Storage Driver (Volume vs Bind Mount) -->
+                <div class="space-y-3 bg-slate-50/70 p-3.5 rounded-lg border border-slate-200/80">
+                  <div class="flex items-center justify-between">
+                    <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wide">Storage Backend</label>
+                    <span class="text-[10px] text-slate-400">Cluster data persistence</span>
+                  </div>
+
+                  <!-- Radio Selector -->
+                  <div class="grid grid-cols-2 gap-3">
+                    <label
+                      :class="[
+                        'flex items-start gap-2.5 p-3 rounded-lg border cursor-pointer transition-all',
+                        serviceConfigs.HDFS.mounts.storageType === 'volume'
+                          ? 'bg-blue-50/50 border-blue-500 shadow-sm'
+                          : 'bg-white border-slate-200 hover:bg-slate-50'
+                      ]"
+                    >
+                      <input
+                        type="radio"
+                        v-model="serviceConfigs.HDFS.mounts.storageType"
+                        value="volume"
+                        class="mt-0.5 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                      />
+                      <div>
+                        <div class="text-xs font-bold text-slate-800">Docker Named Volume</div>
+                        <div class="text-[11px] text-slate-500 mt-0.5 leading-snug">Managed by Docker engine. Safe isolation and zero permission conflicts on host.</div>
+                      </div>
+                    </label>
+
+                    <label
+                      :class="[
+                        'flex items-start gap-2.5 p-3 rounded-lg border cursor-pointer transition-all',
+                        serviceConfigs.HDFS.mounts.storageType === 'bind'
+                          ? 'bg-blue-50/50 border-blue-500 shadow-sm'
+                          : 'bg-white border-slate-200 hover:bg-slate-50'
+                      ]"
+                    >
+                      <input
+                        type="radio"
+                        v-model="serviceConfigs.HDFS.mounts.storageType"
+                        value="bind"
+                        class="mt-0.5 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                      />
+                      <div>
+                        <div class="text-xs font-bold text-slate-800">Host Bind Directory</div>
+                        <div class="text-[11px] text-slate-500 mt-0.5 leading-snug">Store NameNode &amp; DataNodes directly in custom host folders with file explorer.</div>
+                      </div>
+                    </label>
+                  </div>
+
+                  <!-- Volume Mode Display -->
+                  <div v-if="serviceConfigs.HDFS.mounts.storageType === 'volume'" class="p-3 bg-white border border-slate-200 rounded-lg space-y-2">
+                    <div class="flex items-center justify-between text-xs">
+                      <span class="text-slate-600 font-medium">NameNode Volume:</span>
+                      <span class="font-mono text-[11px] bg-slate-100 text-slate-700 px-2 py-0.5 rounded border border-slate-200">
+                        {{ serviceConfigs.HDFS.mounts.nameNodeVolume }} &rarr; /hadoop/dfs/name
+                      </span>
+                    </div>
+                    <div class="flex items-center justify-between text-xs">
+                      <span class="text-slate-600 font-medium">DataNode Volume:</span>
+                      <span class="font-mono text-[11px] bg-slate-100 text-slate-700 px-2 py-0.5 rounded border border-slate-200">
+                        {{ serviceConfigs.HDFS.mounts.dataNodeVolume }} &rarr; /hadoop/dfs/data
+                      </span>
+                    </div>
+                  </div>
+
+                  <!-- Bind Mount Mode Inputs with Explorer Button -->
+                  <div v-else class="space-y-3 p-3 bg-white border border-slate-200 rounded-lg">
+                    <!-- NameNode Host Path -->
+                    <div>
+                      <label class="block text-[11px] font-semibold text-slate-700 mb-1">
+                        NameNode Host Directory <span class="text-slate-400 font-normal">(&rarr; /hadoop/dfs/name)</span>
+                      </label>
+                      <div class="flex items-center gap-2">
+                        <input
+                          v-model="serviceConfigs.HDFS.mounts.nameNodeHostPath"
+                          type="text"
+                          class="flex-1 px-3 py-1.5 text-xs font-mono border border-slate-200 rounded-md bg-slate-50 text-slate-800 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                          placeholder="/home/user/.deloc/hdfs/namenode"
+                        />
+                        <button
+                          type="button"
+                          @click="chooseDirectory(dir => serviceConfigs.HDFS.mounts.nameNodeHostPath = dir)"
+                          class="px-2.5 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-md transition-colors flex items-center gap-1.5 shadow-sm cursor-pointer"
+                          title="Open File Explorer"
+                        >
+                          <FolderOpen class="w-3.5 h-3.5 text-blue-600" />
+                          <span>Browse</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <!-- DataNode Host Path -->
+                    <div>
+                      <label class="block text-[11px] font-semibold text-slate-700 mb-1">
+                        DataNode Host Directory <span class="text-slate-400 font-normal">(&rarr; /hadoop/dfs/data)</span>
+                      </label>
+                      <div class="flex items-center gap-2">
+                        <input
+                          v-model="serviceConfigs.HDFS.mounts.dataNodeHostPath"
+                          type="text"
+                          class="flex-1 px-3 py-1.5 text-xs font-mono border border-slate-200 rounded-md bg-slate-50 text-slate-800 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                          placeholder="/home/user/.deloc/hdfs/datanode"
+                        />
+                        <button
+                          type="button"
+                          @click="chooseDirectory(dir => serviceConfigs.HDFS.mounts.dataNodeHostPath = dir)"
+                          class="px-2.5 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-md transition-colors flex items-center gap-1.5 shadow-sm cursor-pointer"
+                          title="Open File Explorer"
+                        >
+                          <FolderOpen class="w-3.5 h-3.5 text-blue-600" />
+                          <span>Browse</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 2. Host Shared Ingestion Directory (File Explorer Pipeline) -->
+                <div class="space-y-3 bg-slate-50/70 p-3.5 rounded-lg border border-slate-200/80">
+                  <div class="flex items-center justify-between">
+                    <div>
+                      <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wide">Host Shared Ingestion Mount</label>
+                      <p class="text-[11px] text-slate-500 mt-0.5">Mount a host folder to easily ingest datasets into HDFS via <code>hdfs dfs -put</code>.</p>
+                    </div>
+                    <!-- Toggle Switch -->
+                    <label class="relative inline-flex items-center cursor-pointer">
+                      <input type="checkbox" v-model="serviceConfigs.HDFS.mounts.enableHostIngest" class="sr-only peer" />
+                      <div class="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
+                    </label>
+                  </div>
+
+                  <div v-if="serviceConfigs.HDFS.mounts.enableHostIngest" class="p-3 bg-white border border-slate-200 rounded-lg space-y-3">
+                    <!-- Host Path Picker -->
+                    <div>
+                      <label class="block text-[11px] font-semibold text-slate-700 mb-1">Host Directory Path</label>
+                      <div class="flex items-center gap-2">
+                        <input
+                          v-model="serviceConfigs.HDFS.mounts.hostIngestPath"
+                          type="text"
+                          class="flex-1 px-3 py-1.5 text-xs font-mono border border-slate-200 rounded-md bg-slate-50 text-slate-800 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                          placeholder="/home/user/my_datasets"
+                        />
+                        <button
+                          type="button"
+                          @click="chooseDirectory(dir => serviceConfigs.HDFS.mounts.hostIngestPath = dir)"
+                          class="px-2.5 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-md transition-colors flex items-center gap-1.5 shadow-sm cursor-pointer"
+                          title="Open File Explorer"
+                        >
+                          <FolderOpen class="w-3.5 h-3.5 text-blue-600" />
+                          <span>Browse</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <!-- Container Target & Mode -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                      <div>
+                        <label class="block text-[11px] font-medium text-slate-600 mb-1">Container Mount Target</label>
+                        <input
+                          v-model="serviceConfigs.HDFS.mounts.containerIngestPath"
+                          type="text"
+                          class="w-full px-3 py-1.5 text-xs font-mono border border-slate-200 rounded-md bg-slate-50 text-slate-800 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                          placeholder="/mnt/host_data"
+                        />
+                      </div>
+                      <div>
+                        <label class="block text-[11px] font-medium text-slate-600 mb-1">Access Permissions</label>
+                        <div class="flex items-center gap-2">
+                          <label class="flex items-center gap-1.5 text-xs text-slate-700 cursor-pointer">
+                            <input
+                              type="radio"
+                              :value="false"
+                              v-model="serviceConfigs.HDFS.mounts.ingestReadOnly"
+                              class="text-blue-600 focus:ring-blue-500 cursor-pointer"
+                            />
+                            <span>Read / Write</span>
+                          </label>
+                          <label class="flex items-center gap-1.5 text-xs text-slate-700 cursor-pointer ml-3">
+                            <input
+                              type="radio"
+                              :value="true"
+                              v-model="serviceConfigs.HDFS.mounts.ingestReadOnly"
+                              class="text-blue-600 focus:ring-blue-500 cursor-pointer"
+                            />
+                            <span>Read-Only</span>
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="text-[11px] text-slate-500 bg-slate-50 p-2 rounded border border-slate-200/60 flex items-center gap-1.5">
+                      <span class="font-mono text-[10px] bg-slate-200 px-1 py-0.5 rounded text-slate-700">hdfs dfs -put /mnt/host_data/filename.csv /user/data/</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 3. Custom Hadoop XML Config Overrides -->
+                <div class="space-y-3 bg-slate-50/70 p-3.5 rounded-lg border border-slate-200/80">
+                  <div class="flex items-center justify-between">
+                    <div>
+                      <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wide">Custom Hadoop XML Overrides</label>
+                      <p class="text-[11px] text-slate-500 mt-0.5">Mount a host folder containing custom <code>core-site.xml</code> or <code>hdfs-site.xml</code>.</p>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                      <input type="checkbox" v-model="serviceConfigs.HDFS.mounts.enableCustomConf" class="sr-only peer" />
+                      <div class="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
+                    </label>
+                  </div>
+
+                  <div v-if="serviceConfigs.HDFS.mounts.enableCustomConf" class="p-3 bg-white border border-slate-200 rounded-lg">
+                    <label class="block text-[11px] font-semibold text-slate-700 mb-1">Host Config Directory</label>
+                    <div class="flex items-center gap-2">
+                      <input
+                        v-model="serviceConfigs.HDFS.mounts.customConfPath"
+                        type="text"
+                        class="flex-1 px-3 py-1.5 text-xs font-mono border border-slate-200 rounded-md bg-slate-50 text-slate-800 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        placeholder="/path/to/custom/hadoop/conf"
+                      />
+                      <button
+                        type="button"
+                        @click="chooseDirectory(dir => serviceConfigs.HDFS.mounts.customConfPath = dir)"
+                        class="px-2.5 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-md transition-colors flex items-center gap-1.5 shadow-sm cursor-pointer"
+                        title="Open File Explorer"
+                      >
+                        <FolderOpen class="w-3.5 h-3.5 text-blue-600" />
+                        <span>Browse</span>
+                      </button>
+                    </div>
+                    <span class="text-[10px] text-slate-400 mt-1 block">Mounted into <code>/opt/hadoop/etc/hadoop/custom</code></span>
+                  </div>
+                </div>
+
+              </div>
             </div>
 
             <!-- Modal Footer -->
@@ -993,10 +1254,10 @@ of <template>
 <script setup>
 import { ref, computed } from 'vue'
 import {
-  Search, Layers, Play, Square, X, RefreshCw, ExternalLink, Copy, Check, Terminal, HardDrive, CircleAlert, SlidersHorizontal, Cpu
+  Search, Layers, Play, Square, X, RefreshCw, ExternalLink, Copy, Check, Terminal, HardDrive, CircleAlert, SlidersHorizontal, Cpu, Folder, FolderOpen
 } from 'lucide-vue-next'
 import ServiceIcon from './common/ServiceIcon.vue'
-import { FetchDockerTags, OpenTerminal } from '../../wailsjs/go/bindings/Service.js'
+import { FetchDockerTags, OpenTerminal, SelectDirectory } from '../../wailsjs/go/bindings/Service.js'
 import { BrowserOpenURL, ClipboardSetText } from '../../wailsjs/runtime/runtime.js'
 
 const searchQuery = ref('')
@@ -1093,6 +1354,19 @@ const serviceConfigs = ref({
       tmp: true,
       hiveWarehouse: true,
       sparkEvents: true,
+    },
+    mounts: {
+      storageType: 'volume', // 'volume' or 'bind'
+      nameNodeVolume: 'deloc_hdfs_namenode_data',
+      dataNodeVolume: 'deloc_hdfs_datanode_data',
+      nameNodeHostPath: '/home/koushik/.deloc/hdfs/namenode',
+      dataNodeHostPath: '/home/koushik/.deloc/hdfs/datanode',
+      enableHostIngest: true,
+      hostIngestPath: '/home/koushik/datasets',
+      containerIngestPath: '/mnt/host_data',
+      ingestReadOnly: false,
+      enableCustomConf: false,
+      customConfPath: '',
     },
   },
   Spark: {
@@ -1449,6 +1723,22 @@ async function launchTerminal(service) {
     terminalStatus.value = err?.message || 'Could not launch terminal.'
   } finally {
     isLaunchingTerminal.value = false
+  }
+}
+
+async function chooseDirectory(onSelect) {
+  try {
+    let chosen = ''
+    if (typeof SelectDirectory === 'function') {
+      chosen = await SelectDirectory('Select Directory')
+    } else if (window?.go?.bindings?.Service?.SelectDirectory) {
+      chosen = await window.go.bindings.Service.SelectDirectory('Select Directory')
+    }
+    if (chosen) {
+      onSelect(chosen)
+    }
+  } catch (err) {
+    console.warn('Could not open directory picker:', err)
   }
 }
 </script>

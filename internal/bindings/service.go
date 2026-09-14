@@ -10,6 +10,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	wailsRuntime "github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 // Service exposes backend APIs to the Wails frontend runtime.
@@ -174,4 +176,18 @@ func (s *Service) OpenTerminal(containerName string) error {
 	}
 
 	return fmt.Errorf("no supported terminal emulator found (tried gnome-terminal, x-terminal-emulator, kgx, konsole, xterm)")
+}
+
+// SelectDirectory opens the native OS folder picker dialog and returns the selected directory path.
+func (s *Service) SelectDirectory(title string) (string, error) {
+	if s.ctx == nil {
+		return "", fmt.Errorf("application context not ready")
+	}
+	dlgTitle := strings.TrimSpace(title)
+	if dlgTitle == "" {
+		dlgTitle = "Select Directory"
+	}
+	return wailsRuntime.OpenDirectoryDialog(s.ctx, wailsRuntime.OpenDialogOptions{
+		Title: dlgTitle,
+	})
 }
