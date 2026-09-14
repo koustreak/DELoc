@@ -5,10 +5,10 @@
         <li v-for="item in menuItems" :key="item.name">
           <a
             href="#"
-            @click.prevent="active = item.name; $emit('change-tab', item.name)"
+            @click.prevent="$emit('change-tab', item.name)"
             :class="[
               'flex items-center gap-2.5 px-4 py-2 text-xs font-medium transition-colors border-l-3',
-              active === item.name 
+              activeTab === item.name 
                 ? 'bg-blue-600/20 text-white border-blue-500' 
                 : 'border-transparent hover:bg-slate-700/50 hover:text-white'
             ]"
@@ -34,7 +34,14 @@ import {
   BookOpen 
 } from 'lucide-vue-next'
 
-const active = ref('Dashboard')
+const props = defineProps({
+  activeTab: {
+    type: String,
+    default: 'Dashboard'
+  }
+})
+
+const emit = defineEmits(['change-tab'])
 
 const menuItems = [
   { name: 'Dashboard', icon: Home },

@@ -582,70 +582,6 @@ of <template>
                   </div>
                 </div>
 
-                <!-- Kafka Tuning -->
-                <div v-else-if="selectedService.name === 'Kafka'" class="space-y-3.5">
-                  <div class="bg-slate-50/80 p-3.5 rounded-lg border border-slate-200/80 space-y-2">
-                    <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wide">Consensus Protocol</label>
-                    <div class="grid grid-cols-2 gap-2">
-                      <button
-                        type="button"
-                        @click="serviceConfigs.Kafka.mode = 'kraft'"
-                        :class="['p-2 text-xs rounded border text-left cursor-pointer transition-all', serviceConfigs.Kafka.mode === 'kraft' ? 'bg-blue-50 border-blue-400 text-blue-800 font-semibold shadow-xs' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50']"
-                      >
-                        <div class="font-bold">KRaft (Recommended)</div>
-                        <div class="text-[10px] text-slate-500 font-normal">Native Raft quorum, no ZooKeeper</div>
-                      </button>
-                      <button
-                        type="button"
-                        @click="serviceConfigs.Kafka.mode = 'zookeeper'"
-                        :class="['p-2 text-xs rounded border text-left cursor-pointer transition-all', serviceConfigs.Kafka.mode === 'zookeeper' ? 'bg-blue-50 border-blue-400 text-blue-800 font-semibold shadow-xs' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50']"
-                      >
-                        <div class="font-bold">ZooKeeper Mode</div>
-                        <div class="text-[10px] text-slate-500 font-normal">Legacy cluster coordination</div>
-                      </button>
-                    </div>
-                  </div>
-
-                  <div class="grid grid-cols-2 gap-3">
-                    <div class="bg-slate-50/80 p-3 rounded-lg border border-slate-200/80">
-                      <label class="block text-[11px] font-semibold text-slate-700 mb-1">Default Partitions</label>
-                      <select v-model.number="serviceConfigs.Kafka.defaultPartitions" class="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded-md bg-white text-slate-700 font-mono">
-                        <option :value="1">1 partition</option>
-                        <option :value="3">3 partitions (default)</option>
-                        <option :value="6">6 partitions</option>
-                      </select>
-                    </div>
-                    <div class="bg-slate-50/80 p-3 rounded-lg border border-slate-200/80">
-                      <label class="block text-[11px] font-semibold text-slate-700 mb-1">Log Retention</label>
-                      <select v-model="serviceConfigs.Kafka.logRetention" class="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded-md bg-white text-slate-700 font-mono">
-                        <option value="6h">6 hours (Saves disk)</option>
-                        <option value="24h">24 hours (Default)</option>
-                        <option value="168h">7 days</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div class="space-y-2">
-                    <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wide">Developer Add-ons</label>
-                    <div class="space-y-1.5">
-                      <label class="flex items-center gap-2 p-2.5 bg-slate-50/80 border border-slate-200/80 rounded-lg text-xs cursor-pointer hover:bg-slate-100/70">
-                        <input type="checkbox" v-model="serviceConfigs.Kafka.enableKafkaUI" class="rounded accent-blue-600 cursor-pointer" />
-                        <div>
-                          <div class="font-semibold text-slate-800">Kafka Web UI (AKHQ/Console)</div>
-                          <div class="text-[10px] text-slate-500">Visual management for topics, consumer groups, and messages</div>
-                        </div>
-                      </label>
-                      <label class="flex items-center gap-2 p-2.5 bg-slate-50/80 border border-slate-200/80 rounded-lg text-xs cursor-pointer hover:bg-slate-100/70">
-                        <input type="checkbox" v-model="serviceConfigs.Kafka.autoCreateTopics" class="rounded accent-blue-600 cursor-pointer" />
-                        <div>
-                          <div class="font-semibold text-slate-800">Auto-create Topics</div>
-                          <div class="text-[10px] text-slate-500">Automatically provision topics upon first produce</div>
-                        </div>
-                      </label>
-                    </div>
-                  </div>
-                </div>
-
                 <!-- Spark Tuning -->
                 <div v-else-if="selectedService.name === 'Spark'" class="space-y-3.5">
                   <div class="bg-slate-50/80 p-3.5 rounded-lg border border-slate-200/80 space-y-2.5">
@@ -690,85 +626,6 @@ of <template>
                   </div>
                 </div>
 
-                <!-- Airflow Tuning -->
-                <div v-else-if="selectedService.name === 'Airflow'" class="space-y-3.5">
-                  <div class="flex items-center justify-between p-3 bg-slate-50/80 border border-slate-200/80 rounded-lg">
-                    <div>
-                      <div class="text-xs font-semibold text-slate-700">Load Example DAGs</div>
-                      <div class="text-[10px] text-slate-500">Keep disabled for a clean workspace without demo tutorial DAGs</div>
-                    </div>
-                    <input type="checkbox" v-model="serviceConfigs.Airflow.loadExamples" class="w-4 h-4 rounded text-blue-600 accent-blue-600 cursor-pointer" />
-                  </div>
-
-                  <div class="bg-slate-50/80 p-3 rounded-lg border border-slate-200/80 space-y-1.5">
-                    <label class="block text-[11px] font-semibold text-slate-700">Executor Type</label>
-                    <select v-model="serviceConfigs.Airflow.executor" class="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded-md bg-white text-slate-700">
-                      <option value="LocalExecutor">LocalExecutor (Parallel task execution)</option>
-                      <option value="SequentialExecutor">SequentialExecutor (Single thread / Debug)</option>
-                    </select>
-                  </div>
-
-                  <div class="bg-slate-50/80 p-3 rounded-lg border border-slate-200/80 space-y-1.5">
-                    <label class="block text-[11px] font-semibold text-slate-700">DAGs Folder Directory</label>
-                    <input type="text" v-model="serviceConfigs.Airflow.dagsPath" class="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded-md bg-white font-mono text-slate-700" placeholder="~/airflow/dags" />
-                    <span class="text-[10px] text-slate-400">Path on host system mapped into the Airflow container</span>
-                  </div>
-                </div>
-
-                <!-- Trino Tuning -->
-                <div v-else-if="selectedService.name === 'Trino'" class="space-y-3.5">
-                  <div class="bg-slate-50/80 p-3.5 rounded-lg border border-slate-200/80 space-y-2">
-                    <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wide">Auto-mounted Catalogs</label>
-                    <div class="grid grid-cols-2 gap-2">
-                      <label class="flex items-center gap-2 p-2 bg-white border border-slate-200 rounded text-xs cursor-pointer hover:bg-slate-50">
-                        <input type="checkbox" v-model="serviceConfigs.Trino.icebergCatalog" class="rounded accent-blue-600 cursor-pointer" />
-                        <span class="font-medium text-slate-800">Iceberg (MinIO S3)</span>
-                      </label>
-                      <label class="flex items-center gap-2 p-2 bg-white border border-slate-200 rounded text-xs cursor-pointer hover:bg-slate-50">
-                        <input type="checkbox" v-model="serviceConfigs.Trino.hiveCatalog" class="rounded accent-blue-600 cursor-pointer" />
-                        <span class="font-medium text-slate-800">Hive Metastore</span>
-                      </label>
-                      <label class="flex items-center gap-2 p-2 bg-white border border-slate-200 rounded text-xs cursor-pointer hover:bg-slate-50">
-                        <input type="checkbox" v-model="serviceConfigs.Trino.minioCatalog" class="rounded accent-blue-600 cursor-pointer" />
-                        <span class="font-medium text-slate-800">Delta Lake</span>
-                      </label>
-                      <label class="flex items-center gap-2 p-2 bg-white border border-slate-200 rounded text-xs cursor-pointer hover:bg-slate-50">
-                        <input type="checkbox" v-model="serviceConfigs.Trino.postgresCatalog" class="rounded accent-blue-600 cursor-pointer" />
-                        <span class="font-medium text-slate-800">PostgreSQL</span>
-                      </label>
-                    </div>
-                  </div>
-
-                  <div class="bg-slate-50/80 p-3 rounded-lg border border-slate-200/80">
-                    <label class="block text-[11px] font-semibold text-slate-700 mb-1">Max Query Memory Limit</label>
-                    <select v-model="serviceConfigs.Trino.queryMaxMemory" class="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded-md bg-white text-slate-700 font-mono">
-                      <option value="1GB">1 GB</option>
-                      <option value="2GB">2 GB (Default)</option>
-                      <option value="4GB">4 GB</option>
-                    </select>
-                  </div>
-                </div>
-
-                <!-- MinIO Tuning -->
-                <div v-else-if="selectedService.name === 'MinIO'" class="space-y-3.5">
-                  <div class="grid grid-cols-2 gap-3">
-                    <div class="bg-slate-50/80 p-3 rounded-lg border border-slate-200/80 space-y-1">
-                      <label class="block text-[11px] font-semibold text-slate-700">Root User (Access Key)</label>
-                      <input type="text" v-model="serviceConfigs.MinIO.rootUser" class="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded-md bg-white font-mono text-slate-700" />
-                    </div>
-                    <div class="bg-slate-50/80 p-3 rounded-lg border border-slate-200/80 space-y-1">
-                      <label class="block text-[11px] font-semibold text-slate-700">Root Password (Secret Key)</label>
-                      <input type="text" v-model="serviceConfigs.MinIO.rootPassword" class="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded-md bg-white font-mono text-slate-700" />
-                    </div>
-                  </div>
-
-                  <div class="bg-slate-50/80 p-3 rounded-lg border border-slate-200/80 space-y-1.5">
-                    <label class="block text-[11px] font-semibold text-slate-700">Pre-create S3 Buckets</label>
-                    <input type="text" v-model="serviceConfigs.MinIO.defaultBuckets" class="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded-md bg-white font-mono text-slate-700" placeholder="warehouse, raw, bronze, silver, gold" />
-                    <span class="text-[10px] text-slate-400">Comma-separated buckets created automatically on container startup</span>
-                  </div>
-                </div>
-
                 <!-- PostgreSQL Tuning -->
                 <div v-else-if="selectedService.name === 'PostgreSQL'" class="space-y-3.5">
                   <div class="grid grid-cols-2 gap-3">
@@ -800,138 +657,6 @@ of <template>
                         </div>
                       </label>
                     </div>
-                  </div>
-                </div>
-
-                <!-- Apache Hive Tuning -->
-                <div v-else-if="selectedService.name === 'Apache Hive'" class="space-y-3.5">
-                  <div class="bg-slate-50/80 p-3 rounded-lg border border-slate-200/80 space-y-1.5">
-                    <label class="block text-[11px] font-semibold text-slate-700">Metastore Backend</label>
-                    <select v-model="serviceConfigs['Apache Hive'].metastoreBackend" class="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded-md bg-white text-slate-700">
-                      <option value="postgres">PostgreSQL Backend (Recommended for multi-client)</option>
-                      <option value="derby">Embedded Derby (Single-session testing)</option>
-                    </select>
-                  </div>
-                  <div class="bg-slate-50/80 p-3 rounded-lg border border-slate-200/80 space-y-1.5">
-                    <label class="block text-[11px] font-semibold text-slate-700">Warehouse Storage Location</label>
-                    <input type="text" v-model="serviceConfigs['Apache Hive'].warehouseUri" class="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded-md bg-white font-mono text-slate-700" />
-                  </div>
-                </div>
-
-                <!-- Cassandra Tuning -->
-                <div v-else-if="selectedService.name === 'Cassandra'" class="space-y-3.5">
-                  <div class="grid grid-cols-2 gap-3">
-                    <div class="bg-slate-50/80 p-3 rounded-lg border border-slate-200/80 space-y-1">
-                      <label class="block text-[11px] font-semibold text-slate-700">Cluster Name</label>
-                      <input type="text" v-model="serviceConfigs.Cassandra.clusterName" class="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded-md bg-white font-mono text-slate-700" />
-                    </div>
-                    <div class="bg-slate-50/80 p-3 rounded-lg border border-slate-200/80 space-y-1">
-                      <label class="block text-[11px] font-semibold text-slate-700">Datacenter</label>
-                      <input type="text" v-model="serviceConfigs.Cassandra.datacenter" class="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded-md bg-white font-mono text-slate-700" />
-                    </div>
-                  </div>
-                  <div class="bg-slate-50/80 p-3 rounded-lg border border-slate-200/80 space-y-1.5">
-                    <label class="block text-[11px] font-semibold text-slate-700">JVM Heap Limit</label>
-                    <select v-model="serviceConfigs.Cassandra.heapSize" class="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded-md bg-white text-slate-700 font-mono">
-                      <option value="512M">512 MB (Minimal dev)</option>
-                      <option value="1024M">1024 MB (Default)</option>
-                      <option value="2048M">2048 MB</option>
-                    </select>
-                  </div>
-                </div>
-
-                <!-- NiFi Tuning -->
-                <div v-else-if="selectedService.name === 'NiFi'" class="space-y-3.5">
-                  <div class="bg-slate-50/80 p-3 rounded-lg border border-slate-200/80 space-y-1.5">
-                    <label class="block text-[11px] font-semibold text-slate-700">Authentication Mode</label>
-                    <select v-model="serviceConfigs.NiFi.authMode" class="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded-md bg-white text-slate-700">
-                      <option value="anonymous">Anonymous / Local Dev (No login required)</option>
-                      <option value="credentials">Credentials (Single admin user)</option>
-                    </select>
-                  </div>
-                  <div class="grid grid-cols-2 gap-3">
-                    <div class="bg-slate-50/80 p-3 rounded-lg border border-slate-200/80 space-y-1">
-                      <label class="block text-[11px] font-semibold text-slate-700">JVM Heap Size</label>
-                      <select v-model="serviceConfigs.NiFi.heapSize" class="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded-md bg-white text-slate-700 font-mono">
-                        <option value="512M">512 MB</option>
-                        <option value="1GB">1 GB (Default)</option>
-                        <option value="2GB">2 GB</option>
-                      </select>
-                    </div>
-                    <div class="bg-slate-50/80 p-3 rounded-lg border border-slate-200/80 space-y-1">
-                      <label class="block text-[11px] font-semibold text-slate-700">FlowFile Storage Quota</label>
-                      <select v-model="serviceConfigs.NiFi.flowfileQuota" class="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded-md bg-white text-slate-700 font-mono">
-                        <option value="2GB">2 GB</option>
-                        <option value="5GB">5 GB (Default)</option>
-                        <option value="10GB">10 GB</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- MongoDB Tuning -->
-                <div v-else-if="selectedService.name === 'MongoDB'" class="space-y-3.5">
-                  <div class="flex items-center justify-between p-3 bg-slate-50/80 border border-slate-200/80 rounded-lg">
-                    <div>
-                      <div class="text-xs font-semibold text-slate-700">Replica Set Mode (Single-node)</div>
-                      <div class="text-[10px] text-slate-500">Enables Oplog support required for Debezium and Change Streams</div>
-                    </div>
-                    <input type="checkbox" v-model="serviceConfigs.MongoDB.replicaSet" class="w-4 h-4 rounded text-blue-600 accent-blue-600 cursor-pointer" />
-                  </div>
-                  <div class="grid grid-cols-2 gap-3">
-                    <div class="bg-slate-50/80 p-3 rounded-lg border border-slate-200/80 space-y-1">
-                      <label class="block text-[11px] font-semibold text-slate-700">Root Username</label>
-                      <input type="text" v-model="serviceConfigs.MongoDB.rootUser" class="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded-md bg-white font-mono text-slate-700" />
-                    </div>
-                    <div class="bg-slate-50/80 p-3 rounded-lg border border-slate-200/80 space-y-1">
-                      <label class="block text-[11px] font-semibold text-slate-700">Root Password</label>
-                      <input type="text" v-model="serviceConfigs.MongoDB.rootPassword" class="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded-md bg-white font-mono text-slate-700" />
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Neo4j Tuning -->
-                <div v-else-if="selectedService.name === 'Neo4j'" class="space-y-3.5">
-                  <div class="bg-slate-50/80 p-3 rounded-lg border border-slate-200/80 space-y-1">
-                    <label class="block text-[11px] font-semibold text-slate-700">Initial Password (user: neo4j)</label>
-                    <input type="text" v-model="serviceConfigs.Neo4j.password" class="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded-md bg-white font-mono text-slate-700" />
-                  </div>
-                  <div class="space-y-2">
-                    <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wide">Graph Extensions</label>
-                    <div class="grid grid-cols-2 gap-2">
-                      <label class="flex items-center gap-2 p-2.5 bg-slate-50/80 border border-slate-200/80 rounded-lg text-xs cursor-pointer hover:bg-slate-100/70">
-                        <input type="checkbox" v-model="serviceConfigs.Neo4j.enableApoc" class="rounded accent-blue-600 cursor-pointer" />
-                        <div>
-                          <div class="font-semibold text-slate-800">APOC Library</div>
-                          <div class="text-[10px] text-slate-500">Awesome Procedures On Cypher</div>
-                        </div>
-                      </label>
-                      <label class="flex items-center gap-2 p-2.5 bg-slate-50/80 border border-slate-200/80 rounded-lg text-xs cursor-pointer hover:bg-slate-100/70">
-                        <input type="checkbox" v-model="serviceConfigs.Neo4j.enableGds" class="rounded accent-blue-600 cursor-pointer" />
-                        <div>
-                          <div class="font-semibold text-slate-800">GDS (Graph Data Science)</div>
-                          <div class="text-[10px] text-slate-500">Graph algorithms &amp; ML</div>
-                        </div>
-                      </label>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Pinot Tuning -->
-                <div v-else-if="selectedService.name === 'Pinot'" class="space-y-3.5">
-                  <div class="bg-slate-50/80 p-3 rounded-lg border border-slate-200/80 space-y-1.5">
-                    <label class="block text-[11px] font-semibold text-slate-700">Cluster Architecture</label>
-                    <select v-model="serviceConfigs.Pinot.mode" class="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded-md bg-white text-slate-700">
-                      <option value="quickstart">Quickstart (Controller + Broker + Server All-In-One)</option>
-                      <option value="distributed">Decoupled Micro-services</option>
-                    </select>
-                  </div>
-                  <div class="bg-slate-50/80 p-3 rounded-lg border border-slate-200/80 space-y-1.5">
-                    <label class="block text-[11px] font-semibold text-slate-700">Deep Storage Destination</label>
-                    <select v-model="serviceConfigs.Pinot.storageBackend" class="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded-md bg-white text-slate-700 font-mono">
-                      <option value="minio">MinIO (s3://pinot-data/)</option>
-                      <option value="local">Local Container Filesystem</option>
-                    </select>
                   </div>
                 </div>
 
@@ -1298,137 +1023,22 @@ const servicesList = ref([
     ]
   },
   {
-    name: 'Kafka',
-    version: 'v3.6.1',
-    defaultTag: '3.6.1',
+    name: 'PostgreSQL',
+    version: 'v16.2',
+    defaultTag: '16.2',
     status: 'Stopped',
-    containerName: 'deloc-kafka',
+    containerName: 'deloc-postgres',
     network: 'deloc-net (bridge)',
-    description: 'Distributed event streaming platform.',
-    repos: ['apache/kafka', 'bitnami/kafka', 'confluentinc/cp-kafka'],
-    volumes: ['deloc_kafka_data:/var/lib/kafka/data'],
+    description: 'Powerful, open source object-relational database.',
+    repos: ['postgres', 'bitnami/postgresql'],
+    volumes: ['deloc_postgres_data:/var/lib/postgresql/data'],
     environment: [
-      'KAFKA_NODE_ID=1',
-      'KAFKA_PROCESS_ROLES=broker,controller',
-      'KAFKA_LISTENERS=PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093'
+      'POSTGRES_USER=postgres',
+      'POSTGRES_PASSWORD=postgres',
+      'POSTGRES_DB=deloc'
     ],
     endpoints: [
-      { label: 'Broker', port: 9092, url: 'localhost:9092', type: 'tcp' },
-      { label: 'Schema Reg.', port: 8081, url: 'http://localhost:8081', type: 'http' }
-    ]
-  },
-  {
-    name: 'Airflow',
-    version: 'v2.8.1',
-    defaultTag: '2.8.1',
-    status: 'Stopped',
-    containerName: 'deloc-airflow-webserver',
-    network: 'deloc-net (bridge)',
-    description: 'Workflow orchestration tool for data pipelines.',
-    repos: ['apache/airflow', 'bitnami/airflow', 'puckel/docker-airflow'],
-    volumes: [
-      'deloc_airflow_dags:/opt/airflow/dags',
-      'deloc_airflow_logs:/opt/airflow/logs'
-    ],
-    environment: [
-      'AIRFLOW__CORE__EXECUTOR=LocalExecutor',
-      'AIRFLOW__CORE__LOAD_EXAMPLES=False'
-    ],
-    endpoints: [
-      { label: 'Web UI', port: 8080, url: 'http://localhost:8080', type: 'http' }
-    ]
-  },
-  {
-    name: 'Trino',
-    version: 'v440',
-    defaultTag: '440',
-    status: 'Stopped',
-    containerName: 'deloc-trino',
-    network: 'deloc-net (bridge)',
-    description: 'Distributed SQL query engine for big data.',
-    repos: ['trinodb/trino'],
-    volumes: ['deloc_trino_data:/data/trino'],
-    environment: [
-      'TRINO_SERVER_PORT=8080'
-    ],
-    endpoints: [
-      { label: 'Web UI', port: 8080, url: 'http://localhost:8080', type: 'http' }
-    ]
-  },
-  {
-    name: 'Apache Hive',
-    version: 'v4.0.0',
-    defaultTag: '4.0.0',
-    status: 'Stopped',
-    containerName: 'deloc-hive-server',
-    network: 'deloc-net (bridge)',
-    description: 'Data warehouse software for querying and managing large datasets.',
-    repos: ['apache/hive', 'bde2020/hive'],
-    volumes: ['deloc_hive_warehouse:/opt/hive/data/warehouse'],
-    environment: [
-      'HIVE_SERVER2_THRIFT_PORT=10000',
-      'HIVE_METASTORE_PORT=9083'
-    ],
-    endpoints: [
-      { label: 'JDBC / Thrift', port: 10000, url: 'localhost:10000', type: 'tcp' },
-      { label: 'Metastore', port: 9083, url: 'localhost:9083', type: 'tcp' }
-    ]
-  },
-  {
-    name: 'Cassandra',
-    version: 'v4.1.3',
-    defaultTag: '4.1.3',
-    status: 'Stopped',
-    containerName: 'deloc-cassandra',
-    network: 'deloc-net (bridge)',
-    description: 'Highly scalable distributed NoSQL database.',
-    repos: ['cassandra', 'bitnami/cassandra'],
-    volumes: ['deloc_cassandra_data:/var/lib/cassandra'],
-    environment: [
-      'CASSANDRA_CLUSTER_NAME=deloc-cluster',
-      'CASSANDRA_DC=datacenter1'
-    ],
-    endpoints: [
-      { label: 'CQL Native', port: 9042, url: 'localhost:9042', type: 'tcp' },
-      { label: 'JMX', port: 7199, url: 'localhost:7199', type: 'tcp' }
-    ]
-  },
-  {
-    name: 'Pinot',
-    version: 'v1.0.0',
-    defaultTag: '1.0.0',
-    status: 'Stopped',
-    containerName: 'deloc-pinot-controller',
-    network: 'deloc-net (bridge)',
-    description: 'Real-time distributed OLAP datastore.',
-    repos: ['apachepinot/pinot'],
-    volumes: ['deloc_pinot_data:/opt/pinot/data'],
-    environment: [
-      'PINOT_CONTROLLER_PORT=9000',
-      'JAVA_OPTS=-Xms512M -Xmx1G'
-    ],
-    endpoints: [
-      { label: 'Controller UI', port: 9000, url: 'http://localhost:9000', type: 'http' },
-      { label: 'Broker Query', port: 8099, url: 'localhost:8099', type: 'tcp' }
-    ]
-  },
-  {
-    name: 'MinIO',
-    version: 'RELEASE.2024',
-    defaultTag: 'latest',
-    status: 'Stopped',
-    containerName: 'deloc-minio',
-    network: 'deloc-net (bridge)',
-    description: 'High performance S3 compatible object storage.',
-    repos: ['minio/minio', 'bitnami/minio'],
-    volumes: ['deloc_minio_data:/data'],
-    environment: [
-      'MINIO_ROOT_USER=minioadmin',
-      'MINIO_ROOT_PASSWORD=minioadmin'
-    ],
-    endpoints: [
-      { label: 'Console UI', port: 9001, url: 'http://localhost:9001', type: 'http' },
-      { label: 'S3 API', port: 9000, url: 'http://localhost:9000', type: 'http' }
+      { label: 'PostgreSQL', port: 5432, url: 'localhost:5432', type: 'tcp' }
     ]
   },
   {
@@ -1452,87 +1062,7 @@ const servicesList = ref([
       { label: 'Master UI', port: 8080, url: 'http://localhost:8080', type: 'http' },
       { label: 'Spark RPC', port: 7077, url: 'spark://localhost:7077', type: 'tcp' }
     ]
-  },
-  {
-    name: 'NiFi',
-    version: 'v1.25.0',
-    defaultTag: '1.25.0',
-    status: 'Stopped',
-    containerName: 'deloc-nifi',
-    network: 'deloc-net (bridge)',
-    description: 'Automates the flow of data between systems.',
-    repos: ['apache/nifi'],
-    volumes: [
-      'deloc_nifi_flowfile:/opt/nifi/nifi-current/flowfile_repository',
-      'deloc_nifi_database:/opt/nifi/nifi-current/database_repository'
-    ],
-    environment: [
-      'NIFI_WEB_HTTPS_PORT=8443',
-      'NIFI_JVM_HEAP_INIT=512m'
-    ],
-    endpoints: [
-      { label: 'Web UI', port: 8443, url: 'https://localhost:8443/nifi', type: 'http' }
-    ]
-  },
-  {
-    name: 'PostgreSQL',
-    version: 'v16.2',
-    defaultTag: '16.2',
-    status: 'Stopped',
-    containerName: 'deloc-postgres',
-    network: 'deloc-net (bridge)',
-    description: 'Powerful, open source object-relational database.',
-    repos: ['postgres', 'bitnami/postgresql'],
-    volumes: ['deloc_postgres_data:/var/lib/postgresql/data'],
-    environment: [
-      'POSTGRES_USER=postgres',
-      'POSTGRES_PASSWORD=postgres',
-      'POSTGRES_DB=deloc'
-    ],
-    endpoints: [
-      { label: 'PostgreSQL', port: 5432, url: 'localhost:5432', type: 'tcp' }
-    ]
-  },
-  {
-    name: 'MongoDB',
-    version: 'v7.0.5',
-    defaultTag: '7.0.5',
-    status: 'Stopped',
-    containerName: 'deloc-mongodb',
-    network: 'deloc-net (bridge)',
-    description: 'Document-oriented NoSQL database system.',
-    repos: ['mongo', 'bitnami/mongodb'],
-    volumes: ['deloc_mongo_data:/data/db'],
-    environment: [
-      'MONGO_INITDB_ROOT_USERNAME=root',
-      'MONGO_INITDB_ROOT_PASSWORD=example'
-    ],
-    endpoints: [
-      { label: 'MongoDB', port: 27017, url: 'localhost:27017', type: 'tcp' }
-    ]
-  },
-  {
-    name: 'Neo4j',
-    version: 'v5.17.0',
-    defaultTag: '5.17.0',
-    status: 'Stopped',
-    containerName: 'deloc-neo4j',
-    network: 'deloc-net (bridge)',
-    description: 'Native graph database designed for connected data.',
-    repos: ['neo4j'],
-    volumes: [
-      'deloc_neo4j_data:/data',
-      'deloc_neo4j_logs:/logs'
-    ],
-    environment: [
-      'NEO4J_AUTH=neo4j/delocpassword',
-      'NEO4J_PLUGINS=["apoc"]'
-    ],
-    endpoints: [
-      { label: 'Browser UI', port: 7474, url: 'http://localhost:7474', type: 'http' },
-      { label: 'Bolt Protocol', port: 7687, url: 'bolt://localhost:7687', type: 'tcp' }
-    ]
-  },
+  }
 ])
 
 const filteredServices = computed(() => {
@@ -1565,69 +1095,17 @@ const serviceConfigs = ref({
       sparkEvents: true,
     },
   },
-  Kafka: {
-    mode: 'kraft',
-    defaultPartitions: 3,
-    logRetention: '24h',
-    autoCreateTopics: true,
-    enableKafkaUI: true,
-  },
   Spark: {
     workers: 1,
     iceberg: true,
     deltaLake: true,
     historyServer: true,
   },
-  Airflow: {
-    loadExamples: false,
-    executor: 'LocalExecutor',
-    dagsPath: '~/airflow/dags',
-  },
-  Trino: {
-    icebergCatalog: true,
-    hiveCatalog: true,
-    minioCatalog: true,
-    postgresCatalog: false,
-    queryMaxMemory: '2GB',
-  },
-  MinIO: {
-    rootUser: 'minioadmin',
-    rootPassword: 'minioadmin',
-    defaultBuckets: 'warehouse, raw, bronze, silver, gold',
-  },
   PostgreSQL: {
     dbName: 'deloc',
     password: 'postgres',
     enablePgvector: true,
     enablePostGIS: false,
-  },
-  'Apache Hive': {
-    metastoreBackend: 'postgres',
-    warehouseUri: 's3a://warehouse/',
-  },
-  Cassandra: {
-    clusterName: 'deloc-cluster',
-    datacenter: 'dc1',
-    heapSize: '1024M',
-  },
-  NiFi: {
-    authMode: 'anonymous',
-    heapSize: '1GB',
-    flowfileQuota: '5GB',
-  },
-  MongoDB: {
-    replicaSet: false,
-    rootUser: 'root',
-    rootPassword: 'example',
-  },
-  Neo4j: {
-    password: 'delocpassword',
-    enableApoc: true,
-    enableGds: false,
-  },
-  Pinot: {
-    mode: 'quickstart',
-    storageBackend: 'minio',
   },
 })
 
@@ -1833,57 +1311,8 @@ const containerResourceBreakdown = computed(() => {
         pct: isDynamic ? 'Dynamic' : `${Math.round((dnMem / totalMemMB) * 100)}%`
       })
     }
-  } else if (sName === 'Kafka') {
-    const hasUI = serviceConfigs.value.Kafka?.enableKafkaUI
-    if (hasUI) {
-      const brokerCpu = totalCores * 0.8
-      const brokerMem = totalMemMB * 0.8
-      const uiCpu = totalCores * 0.2
-      const uiMem = totalMemMB * 0.2
-      list.push({
-        role: 'Kafka Broker (KRaft)',
-        container: 'deloc-kafka',
-        cpu: fmtCpu(brokerCpu),
-        memory: fmtMem(brokerMem),
-        pct: isDynamic ? 'Dynamic' : '80%'
-      })
-      list.push({
-        role: 'Kafka UI',
-        container: 'deloc-kafka-ui',
-        cpu: fmtCpu(uiCpu),
-        memory: fmtMem(uiMem),
-        pct: isDynamic ? 'Dynamic' : '20%'
-      })
-    } else {
-      list.push({
-        role: 'Kafka Broker (KRaft)',
-        container: 'deloc-kafka',
-        cpu: fmtCpu(totalCores),
-        memory: fmtMem(totalMemMB),
-        pct: isDynamic ? 'Dynamic' : '100%'
-      })
-    }
-  } else if (sName === 'Airflow') {
-    const wsCpu = totalCores * 0.45
-    const wsMem = totalMemMB * 0.45
-    const scCpu = totalCores * 0.55
-    const scMem = totalMemMB * 0.55
-    list.push({
-      role: 'Airflow Webserver',
-      container: 'deloc-airflow-webserver',
-      cpu: fmtCpu(wsCpu),
-      memory: fmtMem(wsMem),
-      pct: isDynamic ? 'Dynamic' : '45%'
-    })
-    list.push({
-      role: 'Airflow Scheduler',
-      container: 'deloc-airflow-scheduler',
-      cpu: fmtCpu(scCpu),
-      memory: fmtMem(scMem),
-      pct: isDynamic ? 'Dynamic' : '55%'
-    })
   } else {
-    // Single container service
+    // Single container service (PostgreSQL)
     list.push({
       role: selectedService.value.name,
       container: selectedService.value.containerName || `deloc-${selectedService.value.name.toLowerCase()}`,
@@ -1909,12 +1338,7 @@ function openConfig(service) {
   const defaultResources = {
     Spark: { cpu: 2, mem: '2', unit: 'GB' },
     HDFS: { cpu: 2, mem: '2', unit: 'GB' },
-    Airflow: { cpu: 2, mem: '2', unit: 'GB' },
-    Trino: { cpu: 2, mem: '2', unit: 'GB' },
-    Kafka: { cpu: 1.5, mem: '1', unit: 'GB' },
-    NiFi: { cpu: 2, mem: '1.5', unit: 'GB' },
-    Cassandra: { cpu: 1.5, mem: '1', unit: 'GB' },
-    Pinot: { cpu: 2, mem: '1.5', unit: 'GB' },
+    PostgreSQL: { cpu: 1, mem: '1', unit: 'GB' },
   }
   const res = defaultResources[service.name] || { cpu: 1, mem: '512', unit: 'MB' }
 

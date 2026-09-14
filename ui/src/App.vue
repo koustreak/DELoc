@@ -6,7 +6,7 @@
     <!-- Application Body -->
     <div class="flex-1 flex overflow-hidden">
       <!-- Left Navigation Menu -->
-      <Sidebar @change-tab="tab => currentTab = tab" />
+      <Sidebar :active-tab="currentTab" @change-tab="tab => currentTab = tab" />
       
       <main class="flex-1 overflow-hidden">
         <Dashboard v-if="currentTab === 'Dashboard'" />

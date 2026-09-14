@@ -94,46 +94,32 @@ import ServiceIcon from './common/ServiceIcon.vue'
 
 const searchQuery = ref('')
 
-// Predefine common service visual traits
-const svcs = {
-  Spark: { icon: Zap, color: 'text-orange-500' },
-  Kafka: { icon: Share2, color: 'text-slate-800' },
-  Trino: { icon: Hexagon, color: 'text-indigo-600' },
-  Ozone: { icon: Database, color: 'text-blue-700' },
-  Airflow: { icon: Wind, color: 'text-cyan-500' },
-  NiFi: { icon: Droplet, color: 'text-teal-600' },
-  HiveMetastore: { icon: Box, color: 'text-amber-500' }
-}
-
 const stacksList = [
   { 
     name: 'Lakehouse Stack', 
     status: 'Running', 
     services: [
-      { name: 'Spark', ...svcs.Spark },
-      { name: 'Kafka', ...svcs.Kafka },
-      { name: 'Trino', ...svcs.Trino },
-      { name: 'Ozone', ...svcs.Ozone }
+      { name: 'HDFS' },
+      { name: 'Spark' },
+      { name: 'PostgreSQL' },
     ]
   },
   { 
     name: 'Streaming Lab', 
     status: 'Stopped', 
     services: [
-      { name: 'Kafka', ...svcs.Kafka },
-      { name: 'Trino', ...svcs.Trino },
-      { name: 'Airflow', ...svcs.Airflow },
-      { name: 'Ozone', ...svcs.Ozone }
+      { name: 'Kafka' },
+      { name: 'Spark' },
+      { name: 'PostgreSQL' },
     ]
   },
   { 
-    name: 'CDC Pipeline', 
-    status: 'Stopping...', 
+    name: 'ELT & Workflow', 
+    status: 'Stopped', 
     services: [
-      { name: 'Kafka', ...svcs.Kafka },
-      { name: 'Trino', ...svcs.Trino },
-      { name: 'NiFi', ...svcs.NiFi },
-      { name: 'Hive Metastore', ...svcs.HiveMetastore }
+      { name: 'Airflow' },
+      { name: 'PostgreSQL' },
+      { name: 'Spark' },
     ]
   }
 ]
