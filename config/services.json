@@ -1,2 +1,42 @@
-{}
-
+{
+  "postgresql": {
+    "name": "PostgreSQL",
+    "description": "Enterprise-grade relational database, metadata store, and analytical lakehouse catalog",
+    "version": {
+      "recommended": "16.2",
+      "supported": [
+        "14",
+        "15",
+        "16",
+        "17"
+      ]
+    },
+    "runtime": {
+      "type": "docker",
+      "image": "postgres:16-alpine",
+      "default_port": 5432,
+      "default_database": "deloc_db",
+      "default_user": "postgres",
+      "default_data_dir": "~/.deloc/data/postgres"
+    },
+    "jdbc": {
+      "driver_class": "org.postgresql.Driver",
+      "recommended_driver_version": "42.7.3",
+      "maven_coordinate": "org.postgresql:postgresql:42.7.3"
+    },
+    "extensions": {
+      "pg_stat_statements": {
+        "description": "Tracks execution statistics of all SQL queries executed by the server"
+      },
+      "uuid-ossp": {
+        "description": "Functions to generate universally unique identifiers (UUIDs)"
+      },
+      "pgvector": {
+        "description": "Vector similarity search and embeddings storage for AI and ML pipelines"
+      },
+      "postgis": {
+        "description": "Spatial database extender adding support for geographic objects"
+      }
+    }
+  }
+}
