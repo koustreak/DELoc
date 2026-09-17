@@ -1,0 +1,85 @@
+{
+  "jupyterlab": {
+    "recommended_version": "4.2.0",
+    "supported_versions": [
+      "4.1.8",
+      "4.2.0"
+    ],
+    "runtime": "python (deloc-env)",
+    "default_port": 8888,
+    "launch_command": "jupyter lab --no-browser --port=8888 --ServerApp.token=''",
+    "extensions": {
+      "sql_and_data": {
+        "jupysql": {
+          "version": "0.10.11",
+          "description": "Enterprise %sql magic for querying PostgreSQL, DuckDB, and Spark SQL directly in cells"
+        },
+        "duckdb-engine": {
+          "version": "0.13.0",
+          "description": "SQLAlchemy driver enabling direct SQL execution over local Parquet, Delta, and CSV files"
+        },
+        "itables": {
+          "version": "2.1.2",
+          "description": "Interactive, scrollable DataTables with instant search, sorting, and pagination"
+        }
+      },
+      "productivity_and_dev": {
+        "jupyterlab-lsp": {
+          "version": "5.1.0",
+          "description": "Language Server Protocol integration for code completion, diagnostics, and hover documentation"
+        },
+        "jupyterlab-code-formatter": {
+          "version": "3.0.1",
+          "description": "One-click cell formatting powered by Black and Ruff"
+        },
+        "jupyterlab-git": {
+          "version": "0.50.0",
+          "description": "Visual Git version control extension for notebooks and scripts"
+        }
+      }
+    }
+  },
+  "zeppelin": {
+    "recommended_version": "0.11.1",
+    "supported_versions": [
+      "0.10.1",
+      "0.11.1"
+    ],
+    "runtime": "java (OpenJDK 11/17)",
+    "default_port": 8082,
+    "download_url_template": "https://archive.apache.org/dist/zeppelin/zeppelin-{version}/zeppelin-{version}-bin-netinst.tgz",
+    "interpreters": {
+      "spark": {
+        "type": "builtin",
+        "description": "Apache Spark 3.5 distributed analytics engine supporting Scala, PySpark, and Spark SQL (%spark, %spark.sql, %spark.pyspark)"
+      },
+      "jdbc": {
+        "type": "builtin",
+        "description": "Direct relational database query engine for PostgreSQL and JDBC data sources (%jdbc)"
+      },
+      "python": {
+        "type": "builtin",
+        "description": "Interactive Python environment with automatic Matplotlib and Pandas table rendering (%python, %ipython)"
+      },
+      "shell_and_markdown": {
+        "type": "builtin",
+        "description": "Local shell execution and rich narrative markdown documentation (%sh, %md)"
+      }
+    },
+    "visualizations_and_plugins": {
+      "zeppelin-highcharts": {
+        "type": "helium",
+        "description": "Interactive charts, histograms, and time-series visualization"
+      },
+      "zeppelin-plotly": {
+        "type": "helium",
+        "description": "Declarative 2D and 3D statistical charting"
+      },
+      "zeppelin-bubblechart": {
+        "type": "helium",
+        "description": "Multidimensional scatter and bubble analytics"
+      }
+    }
+  }
+}
+

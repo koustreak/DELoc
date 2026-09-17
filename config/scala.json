@@ -1,2 +1,65 @@
-{}
-
+{
+  "environment": {
+    "recommended_version": "2.12.18",
+    "supported_versions": [
+      "2.12.18",
+      "2.13.13",
+      "3.3.3"
+    ],
+    "default_install_dir": "~/.deloc/scala"
+  },
+  "build_tool": {
+    "name": "sbt",
+    "recommended_version": "1.9.9",
+    "supported_versions": [
+      "1.9.9",
+      "1.10.1"
+    ],
+    "default_install_dir": "~/.deloc/sbt"
+  },
+  "compatibility_matrix": [
+    {
+      "scala_version": "2.12.18",
+      "compatible_sbt_versions": [
+        "1.9.9",
+        "1.10.1"
+      ],
+      "compatible_java_versions": [
+        "8",
+        "11",
+        "17"
+      ],
+      "target_spark_version": "3.5.1",
+      "notes": "Default binary release compatibility for Apache Spark 3.5.x"
+    },
+    {
+      "scala_version": "2.13.13",
+      "compatible_sbt_versions": [
+        "1.9.9",
+        "1.10.1"
+      ],
+      "compatible_java_versions": [
+        "8",
+        "11",
+        "17",
+        "21"
+      ],
+      "target_spark_version": "3.5.1",
+      "notes": "Modern Scala 2 ecosystem target"
+    },
+    {
+      "scala_version": "3.3.3",
+      "compatible_sbt_versions": [
+        "1.9.9",
+        "1.10.1"
+      ],
+      "compatible_java_versions": [
+        "11",
+        "17",
+        "21"
+      ],
+      "target_spark_version": "Experimental",
+      "notes": "Scala 3 LTS for standalone services and analytical routines"
+    }
+  ]
+}
