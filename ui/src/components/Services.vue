@@ -1414,6 +1414,12 @@ async function checkServicesState() {
         if (state && state.configured) {
           s.isConfigured = true
           s.status = state.status || 'Stopped'
+          if (state.config?.containerName) {
+            s.containerName = state.config.containerName
+          }
+          if (state.config?.version) {
+            s.version = `v${state.config.version}`
+          }
           if (state.port && s.endpoints?.[0]) {
             s.endpoints[0].port = state.port
             s.endpoints[0].url = `localhost:${state.port}`
@@ -1441,6 +1447,12 @@ async function handleAutoConfigure(service) {
       if (state && state.configured) {
         service.isConfigured = true
         service.status = state.status || 'Stopped'
+        if (state.config?.containerName) {
+          service.containerName = state.config.containerName
+        }
+        if (state.config?.version) {
+          service.version = `v${state.config.version}`
+        }
         if (state.port && service.endpoints?.[0]) {
           service.endpoints[0].port = state.port
           service.endpoints[0].url = `localhost:${state.port}`

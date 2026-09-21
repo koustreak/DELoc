@@ -6,7 +6,10 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"os/exec"
+	"os/user"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -214,34 +217,126 @@ func (s *Service) GetServiceState(serviceName string) (*states.ServiceState, err
 	return s.store.GetServiceState(name)
 }
 
-// AutoConfigureService automatically applies recommended defaults for a service and marks it configured.
+// ServiceRuntimeConfig defines the runtime container options for a service.
+type ServiceRuntimeConfig struct {
+	Type            string `json:"type"`
+	Image           string `json:"image"`
+	ContainerName   string `json:"container_name"`
+	DefaultPort     int    `json:"default_port"`
+	DefaultDatabase string `json:"default_database"`
+	DefaultUser     string `json:"default_user"`
+	DefaultDataDir  string `json:"default_data_dir"`
+}
+
+// ServiceJDBCConfig defines the JDBC driver coordinates and configuration.
+type ServiceJDBCConfig struct {
+	DriverClass              string `json:"driver_class"`
+	RecommendedDriverVersion string `json:"recommended_driver_version"`
+	MavenCoordinate          string `json:"maven_coordinate"`
+}
+
+// ServiceConfigDef maps the schema of config/services.json for a service.
+type ServiceConfigDef struct {
+	Name        string               `json:"name"`
+	Description string               `json:"description"`
+	Version     string               `json:"version"`
+	Runtime     ServiceRuntimeConfig `json:"runtime"`
+	JDBC        ServiceJDBCConfig    `json:"jdbc"`
+	Extensions  map[string]any       `json:"extensions"`
+}
+
+// loadServiceConfigDef searches and parses config/services.json.
+func loadServiceConfigDef(serviceKey string) (*ServiceConfigDef, error) {
+	pathsToTry := []string{
+		"config/services.json",
+		filepath.Join(".", "config", "services.json"),
+	}
+	if home, err := os.UserHomeDir(); err == nil {
+		pathsToTry = append(pathsToTry, filepath.Join(home, ".deloc", "config", "services.json"))
+	}
+
+	var data []byte
+	var readErr error
+	for _, p := range pathsToTry {
+		data, readErr = os.ReadFile(p)
+		if readErr == nil && len(data) > 0 {
+			break
+		}
+	}
+
+	if len(data) == 0 {
+		return nil, fmt.Errorf("could not read config/services.json from any known path: %w", readErr)
+	}
+
+	var allConfigs map[string]ServiceConfigDef
+	if err := json.Unmarshal(data, &allConfigs); err != nil {
+		return nil, fmt.Errorf("failed to parse config/services.json: %w", err)
+	}
+
+	key := strings.ToLower(strings.TrimSpace(serviceKey))
+	cfg, ok := allConfigs[key]
+	if !ok && key == "postgres" {
+		cfg, ok = allConfigs["postgresql"]
+	}
+	if !ok {
+		return nil, fmt.Errorf("service '%s' not found in config/services.json", serviceKey)
+	}
+
+	// Substitute dynamic placeholders like <username>
+	currentUser := "user"
+	if u, err := user.Current(); err == nil && u.Username != "" {
+		currentUser = u.Username
+	}
+	cfg.Runtime.ContainerName = strings.ReplaceAll(cfg.Runtime.ContainerName, "<username>", currentUser)
+
+	return &cfg, nil
+}
+
+// AutoConfigureService automatically applies recommended defaults from config/services.json and marks it configured.
 func (s *Service) AutoConfigureService(serviceName string) (*states.ServiceState, error) {
 	if s.store == nil {
 		return nil, fmt.Errorf("persistent store not initialized")
 	}
 
 	name := strings.ToLower(strings.TrimSpace(serviceName))
-	var state states.ServiceState
+	cfg, err := loadServiceConfigDef(name)
+	if err != nil {
+		return nil, fmt.Errorf("auto-configuration failed: %w", err)
+	}
 
-	switch name {
-	case "postgresql", "postgres":
-		state = states.ServiceState{
-			Configured:   true,
-			ContainerID:  "",
-			Status:       "Stopped",
-			Port:         5432,
-			Database:     "deloc_db",
-			User:         "postgres",
-			DataDir:      "~/.deloc/data/postgres",
-			ConfiguredAt: time.Now().Unix(),
-			Config: map[string]any{
-				"image":         "postgres:17-alpine",
-				"containerName": "deloc-postgres",
-				"version":       "17",
-			},
-		}
-	default:
-		return nil, fmt.Errorf("unsupported service for auto-configuration: %s", serviceName)
+	port := cfg.Runtime.DefaultPort
+	if port == 0 {
+		port = 5432
+	}
+	db := cfg.Runtime.DefaultDatabase
+	if db == "" {
+		db = "deloc_db"
+	}
+	dbUser := cfg.Runtime.DefaultUser
+	if dbUser == "" {
+		dbUser = "postgres"
+	}
+	dataDir := cfg.Runtime.DefaultDataDir
+	if dataDir == "" {
+		dataDir = "~/.deloc/data/postgres"
+	}
+
+	state := states.ServiceState{
+		Configured:   true,
+		ContainerID:  "",
+		Status:       "Stopped",
+		Port:         port,
+		Database:     db,
+		User:         dbUser,
+		DataDir:      dataDir,
+		ConfiguredAt: time.Now().Unix(),
+		Config: map[string]any{
+			"image":         cfg.Runtime.Image,
+			"containerName": cfg.Runtime.ContainerName,
+			"version":       cfg.Version,
+			"extensions":    cfg.Extensions,
+			"jdbc":          cfg.JDBC,
+		},
 	}
 
 	if err := s.store.SaveServiceState(name, &state); err != nil {
@@ -249,6 +344,11 @@ func (s *Service) AutoConfigureService(serviceName string) (*states.ServiceState
 	}
 
 	return &state, nil
+}
+
+// GetServiceDefinition returns the definition from config/services.json for a given service.
+func (s *Service) GetServiceDefinition(serviceName string) (*ServiceConfigDef, error) {
+	return loadServiceConfigDef(serviceName)
 }
 
 // SaveServiceState persists custom service configuration to bbolt.
