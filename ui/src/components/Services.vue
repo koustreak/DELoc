@@ -159,15 +159,17 @@
             <button
               @click="handleAutoConfigure(service)"
               :disabled="isConfiguring"
-              class="flex-1 flex items-center justify-center gap-1.5 py-2 rounded text-[11px] font-semibold bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white shadow-sm transition-all active:scale-95 cursor-pointer disabled:opacity-50"
-              title="Apply recommended PostgreSQL 17 defaults"
+              class="flex-1 flex items-center justify-center gap-1.5 py-2 rounded text-[11px] font-semibold bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white shadow-sm transition-all active:scale-95 cursor-pointer disabled:opacity-60"
+              title="Checks local image, downloads if missing, and configures defaults from services.json"
             >
-              <Zap class="w-3 h-3" />
-              <span>{{ isConfiguring ? 'Configuring...' : 'Auto Configure' }}</span>
+              <RefreshCw v-if="isConfiguring" class="w-3 h-3 animate-spin" />
+              <Zap v-else class="w-3 h-3" />
+              <span>{{ isConfiguring ? 'Downloading & Configuring...' : 'Auto Configure' }}</span>
             </button>
             <button
               @click="handleManualConfigure(service)"
-              class="flex-1 flex items-center justify-center gap-1.5 py-2 rounded text-[11px] font-semibold bg-white hover:bg-slate-50 active:bg-slate-100 border border-slate-300 text-slate-700 shadow-sm transition-all active:scale-95 cursor-pointer"
+              :disabled="isConfiguring"
+              class="flex-1 flex items-center justify-center gap-1.5 py-2 rounded text-[11px] font-semibold bg-white hover:bg-slate-50 active:bg-slate-100 border border-slate-300 text-slate-700 shadow-sm transition-all active:scale-95 cursor-pointer disabled:opacity-60"
               title="Open settings modal to customize configuration"
             >
               <SlidersHorizontal class="w-3 h-3 text-slate-500" />
@@ -175,26 +177,35 @@
             </button>
           </div>
 
-          <!-- Configured State: Start/Stop & Configure -->
+          <!-- Configured State: Start/Stop & Reconfigure -->
           <div v-else class="flex items-center gap-2 mt-auto">
             <button
               @click="toggleService(service)"
+              :disabled="isOperatingService"
               :class="[
-                'flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded text-[11px] font-semibold transition-all active:scale-95 shadow-sm',
+                'flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded text-[11px] font-semibold transition-all active:scale-95 shadow-sm cursor-pointer disabled:opacity-60',
                 service.status === 'Running'
                   ? 'bg-rose-600 hover:bg-rose-700 text-white shadow-rose-900/20'
                   : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-900/20'
               ]"
             >
-              <Square v-if="service.status === 'Running'" class="w-2.5 h-2.5" fill="currentColor" />
+              <RefreshCw v-if="isOperatingService" class="w-2.5 h-2.5 animate-spin" />
+              <Square v-else-if="service.status === 'Running'" class="w-2.5 h-2.5" fill="currentColor" />
               <Play v-else class="w-2.5 h-2.5" fill="currentColor" />
               {{ service.status === 'Running' ? 'Stop' : 'Start' }}
             </button>
             <button
               @click="openConfig(service)"
-              class="flex-1 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 border border-slate-300/80 text-slate-700 py-1.5 rounded text-[11px] font-semibold shadow-sm transition-all active:scale-95"
+              :disabled="service.configType === 'auto' || isOperatingService"
+              :title="service.configType === 'auto' ? 'Reconfiguration is disabled because this service was auto-configured from services.json' : 'Reconfigure service parameters'"
+              :class="[
+                'flex-1 py-1.5 rounded text-[11px] font-semibold shadow-sm transition-all border',
+                service.configType === 'auto'
+                  ? 'bg-slate-50 border-slate-200 text-slate-400 cursor-not-allowed opacity-60'
+                  : 'bg-slate-100 hover:bg-slate-200 active:bg-slate-300 border-slate-300/80 text-slate-700 cursor-pointer active:scale-95'
+              ]"
             >
-              Configure
+              Reconfigure
             </button>
           </div>
         </div>
@@ -1312,7 +1323,9 @@ import {
   IsServiceConfigured,
   GetServiceState,
   AutoConfigureService,
-  SaveServiceState
+  SaveServiceState,
+  StartService,
+  StopService
 } from '../../wailsjs/go/bindings/Service.js'
 import { BrowserOpenURL, ClipboardSetText } from '../../wailsjs/runtime/runtime.js'
 
@@ -1343,15 +1356,13 @@ const servicesList = ref([
   */
   {
     name: 'PostgreSQL',
-    version: 'v16.2',
-    defaultTag: '16.2',
     version: 'v17',
     defaultTag: '17',
     status: 'Stopped',
     isConfigured: false,
+    configType: 'auto',
     containerName: 'deloc-postgres',
     network: 'deloc-net (bridge)',
-    description: 'Powerful, open source object-relational database.',
     description: 'Enterprise-grade relational database and analytical catalog.',
     repos: ['postgres', 'bitnami/postgresql'],
     volumes: ['deloc_postgres_data:/var/lib/postgresql/data'],
@@ -1414,6 +1425,7 @@ async function checkServicesState() {
         if (state && state.configured) {
           s.isConfigured = true
           s.status = state.status || 'Stopped'
+          s.configType = state.configType || 'auto'
           if (state.config?.containerName) {
             s.containerName = state.config.containerName
           }
@@ -1447,6 +1459,7 @@ async function handleAutoConfigure(service) {
       if (state && state.configured) {
         service.isConfigured = true
         service.status = state.status || 'Stopped'
+        service.configType = state.configType || 'auto'
         if (state.config?.containerName) {
           service.containerName = state.config.containerName
         }
@@ -1767,6 +1780,7 @@ async function applyConfig() {
       if (typeof SaveServiceState === 'function') {
         await SaveServiceState(selectedService.value.name, {
           configured: true,
+          configType: 'manual',
           status: selectedService.value.status || 'Stopped',
           port: 5432,
           database: serviceConfigs.value.PostgreSQL?.dbName || 'deloc_db',
@@ -1781,6 +1795,7 @@ async function applyConfig() {
         })
       }
       selectedService.value.isConfigured = true
+      selectedService.value.configType = 'manual'
     } catch (err) {
       console.error('Failed to save service config:', err)
     }
@@ -1814,10 +1829,45 @@ function openEndpoint(url) {
   }
 }
 
-function toggleService(service) {
-  service.status = service.status === 'Running' ? 'Stopped' : 'Running'
-  if (service.status === 'Running' && notRunningNotice.value[service.name]) {
-    notRunningNotice.value[service.name] = false
+const isOperatingService = ref(false)
+
+async function toggleService(service) {
+  isOperatingService.value = true
+  try {
+    if (service.status === 'Running') {
+      if (typeof StopService === 'function') {
+        const res = await StopService(service.name)
+        if (res) {
+          service.status = res.status || 'Stopped'
+        } else {
+          service.status = 'Stopped'
+        }
+      } else {
+        service.status = 'Stopped'
+      }
+    } else {
+      if (typeof StartService === 'function') {
+        const res = await StartService(service.name)
+        if (res) {
+          service.status = res.status || 'Running'
+          if (res.containerId) {
+            service.containerName = res.config?.containerName || service.containerName
+          }
+        } else {
+          service.status = 'Running'
+        }
+      } else {
+        service.status = 'Running'
+      }
+      if (typeof notRunningNotice !== 'undefined' && notRunningNotice.value && notRunningNotice.value[service.name]) {
+        notRunningNotice.value[service.name] = false
+      }
+    }
+  } catch (err) {
+    console.error('Failed to toggle service:', err)
+    alert(err?.message || 'Error updating service')
+  } finally {
+    isOperatingService.value = false
   }
 }
 

@@ -18,16 +18,17 @@ const (
 
 // ServiceState represents the persisted configuration and runtime state of a service.
 type ServiceState struct {
-	Configured   bool              `json:"configured"`
-	ContainerID  string            `json:"containerId,omitempty"`
-	Status       string            `json:"status"` // "unconfigured", "stopped", "running"
-	Port         int               `json:"port"`
-	Database     string            `json:"database"`
-	User         string            `json:"user"`
-	DataDir      string            `json:"dataDir"`
-	ConfiguredAt int64             `json:"configuredAt,omitempty"`
-	StartedAt    int64             `json:"startedAt,omitempty"`
-	Config       map[string]any    `json:"config,omitempty"`
+	Configured   bool           `json:"configured"`
+	ConfigType   string         `json:"configType,omitempty"` // "auto" or "manual"
+	ContainerID  string         `json:"containerId,omitempty"`
+	Status       string         `json:"status"` // "unconfigured", "stopped", "running"
+	Port         int            `json:"port"`
+	Database     string         `json:"database"`
+	User         string         `json:"user"`
+	DataDir      string         `json:"dataDir"`
+	ConfiguredAt int64          `json:"configuredAt,omitempty"`
+	StartedAt    int64          `json:"startedAt,omitempty"`
+	Config       map[string]any `json:"config,omitempty"`
 }
 
 // Store handles persistent disk storage using bbolt.
@@ -148,4 +149,3 @@ func (s *Store) SaveServiceState(serviceName string, state *ServiceState) error 
 		return b.Put([]byte(serviceName), data)
 	})
 }
-

@@ -292,7 +292,38 @@ func loadServiceConfigDef(serviceKey string) (*ServiceConfigDef, error) {
 	return &cfg, nil
 }
 
-// AutoConfigureService automatically applies recommended defaults from config/services.json and marks it configured.
+// checkImageExists verifies if a Docker image is locally present in the Docker daemon cache.
+func checkImageExists(image string) bool {
+	cmd := exec.Command("docker", "image", "inspect", image)
+	return cmd.Run() == nil
+}
+
+// pullDockerImage pulls the specified Docker image from registry.
+func pullDockerImage(ctx context.Context, image string) error {
+	var cmd *exec.Cmd
+	if ctx != nil {
+		cmd = exec.CommandContext(ctx, "docker", "pull", image)
+	} else {
+		cmd = exec.Command("docker", "pull", image)
+	}
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("failed to pull docker image %s: %s (%w)", image, string(out), err)
+	}
+	return nil
+}
+
+// expandHomePath expands '~/' in a directory path to the user's home directory.
+func expandHomePath(p string) string {
+	if strings.HasPrefix(p, "~/") {
+		if home, err := os.UserHomeDir(); err == nil {
+			return filepath.Join(home, p[2:])
+		}
+	}
+	return p
+}
+
+// AutoConfigureService automatically applies recommended defaults from config/services.json and marks it configured in bbolt without starting the container.
 func (s *Service) AutoConfigureService(serviceName string) (*states.ServiceState, error) {
 	if s.store == nil {
 		return nil, fmt.Errorf("persistent store not initialized")
@@ -302,6 +333,17 @@ func (s *Service) AutoConfigureService(serviceName string) (*states.ServiceState
 	cfg, err := loadServiceConfigDef(name)
 	if err != nil {
 		return nil, fmt.Errorf("auto-configuration failed: %w", err)
+	}
+
+	// 1. Check if the image is available locally; if not, download it
+	image := cfg.Runtime.Image
+	if image == "" {
+		image = "postgres:17-alpine"
+	}
+	if !checkImageExists(image) {
+		if err := pullDockerImage(s.ctx, image); err != nil {
+			return nil, fmt.Errorf("failed downloading docker image %s: %w", image, err)
+		}
 	}
 
 	port := cfg.Runtime.DefaultPort
@@ -321,8 +363,10 @@ func (s *Service) AutoConfigureService(serviceName string) (*states.ServiceState
 		dataDir = "~/.deloc/data/postgres"
 	}
 
+	// 2. Insert the record in bbolt, but DO NOT start the container (status: Stopped)
 	state := states.ServiceState{
 		Configured:   true,
+		ConfigType:   "auto",
 		ContainerID:  "",
 		Status:       "Stopped",
 		Port:         port,
@@ -331,7 +375,7 @@ func (s *Service) AutoConfigureService(serviceName string) (*states.ServiceState
 		DataDir:      dataDir,
 		ConfiguredAt: time.Now().Unix(),
 		Config: map[string]any{
-			"image":         cfg.Runtime.Image,
+			"image":         image,
 			"containerName": cfg.Runtime.ContainerName,
 			"version":       cfg.Version,
 			"extensions":    cfg.Extensions,
@@ -346,6 +390,129 @@ func (s *Service) AutoConfigureService(serviceName string) (*states.ServiceState
 	return &state, nil
 }
 
+// StartService starts the Docker container for a configured service and updates bbolt to Running.
+func (s *Service) StartService(serviceName string) (*states.ServiceState, error) {
+	if s.store == nil {
+		return nil, fmt.Errorf("persistent store not initialized")
+	}
+
+	name := strings.ToLower(strings.TrimSpace(serviceName))
+	state, err := s.store.GetServiceState(name)
+	if err != nil || state == nil || !state.Configured {
+		return nil, fmt.Errorf("service %s is not configured", serviceName)
+	}
+
+	containerName := ""
+	image := "postgres:17-alpine"
+	if state.Config != nil {
+		if c, ok := state.Config["containerName"].(string); ok && c != "" {
+			containerName = c
+		}
+		if img, ok := state.Config["image"].(string); ok && img != "" {
+			image = img
+		}
+	}
+	if containerName == "" {
+		currentUser := "user"
+		if u, err := user.Current(); err == nil && u.Username != "" {
+			currentUser = u.Username
+		}
+		containerName = fmt.Sprintf("deloc-%s-%s", name, currentUser)
+	}
+
+	// Check if container already exists
+	checkCmd := exec.Command("docker", "ps", "-a", "--filter", fmt.Sprintf("name=^/%s$", containerName), "--format", "{{.ID}}")
+	existingOut, _ := checkCmd.Output()
+	existingID := strings.TrimSpace(string(existingOut))
+
+	if existingID != "" {
+		// Existing container found: start it
+		startCmd := exec.Command("docker", "start", containerName)
+		if startOut, err := startCmd.CombinedOutput(); err != nil {
+			return nil, fmt.Errorf("failed to start existing container %s: %s (%w)", containerName, string(startOut), err)
+		}
+		state.ContainerID = existingID
+	} else {
+		// New container: ensure data directory exists on host
+		hostDataDir := expandHomePath(state.DataDir)
+		if err := os.MkdirAll(hostDataDir, 0755); err != nil {
+			return nil, fmt.Errorf("failed to create data directory %s: %w", hostDataDir, err)
+		}
+
+		port := state.Port
+		if port == 0 {
+			port = 5432
+		}
+		db := state.Database
+		if db == "" {
+			db = "deloc_db"
+		}
+		dbUser := state.User
+		if dbUser == "" {
+			dbUser = "postgres"
+		}
+
+		args := []string{
+			"run", "-d",
+			"--name", containerName,
+			"-p", fmt.Sprintf("%d:5432", port),
+			"-e", fmt.Sprintf("POSTGRES_DB=%s", db),
+			"-e", fmt.Sprintf("POSTGRES_USER=%s", dbUser),
+			"-e", "POSTGRES_PASSWORD=postgres",
+			"-v", fmt.Sprintf("%s:/var/lib/postgresql/data", hostDataDir),
+			image,
+		}
+
+		runCmd := exec.Command("docker", args...)
+		runOut, err := runCmd.CombinedOutput()
+		if err != nil {
+			return nil, fmt.Errorf("failed to run container %s: %s (%w)", containerName, string(runOut), err)
+		}
+		state.ContainerID = strings.TrimSpace(string(runOut))
+	}
+
+	state.Status = "Running"
+	state.StartedAt = time.Now().Unix()
+	if err := s.store.SaveServiceState(name, state); err != nil {
+		return nil, fmt.Errorf("failed to update state in bbolt: %w", err)
+	}
+
+	return state, nil
+}
+
+// StopService stops the running Docker container for a service and updates bbolt to Stopped.
+func (s *Service) StopService(serviceName string) (*states.ServiceState, error) {
+	if s.store == nil {
+		return nil, fmt.Errorf("persistent store not initialized")
+	}
+
+	name := strings.ToLower(strings.TrimSpace(serviceName))
+	state, err := s.store.GetServiceState(name)
+	if err != nil || state == nil {
+		return nil, fmt.Errorf("service %s not found", serviceName)
+	}
+
+	containerTarget := state.ContainerID
+	if state.Config != nil {
+		if c, ok := state.Config["containerName"].(string); ok && c != "" {
+			containerTarget = c
+		}
+	}
+	if containerTarget == "" {
+		containerTarget = fmt.Sprintf("deloc-%s", name)
+	}
+
+	stopCmd := exec.Command("docker", "stop", containerTarget)
+	_ = stopCmd.Run()
+
+	state.Status = "Stopped"
+	if err := s.store.SaveServiceState(name, state); err != nil {
+		return nil, fmt.Errorf("failed to update state in bbolt: %w", err)
+	}
+
+	return state, nil
+}
+
 // GetServiceDefinition returns the definition from config/services.json for a given service.
 func (s *Service) GetServiceDefinition(serviceName string) (*ServiceConfigDef, error) {
 	return loadServiceConfigDef(serviceName)
@@ -358,6 +525,9 @@ func (s *Service) SaveServiceState(serviceName string, state states.ServiceState
 	}
 	name := strings.ToLower(strings.TrimSpace(serviceName))
 	state.Configured = true
+	if state.ConfigType == "" {
+		state.ConfigType = "manual"
+	}
 	if state.ConfiguredAt == 0 {
 		state.ConfiguredAt = time.Now().Unix()
 	}
