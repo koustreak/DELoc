@@ -2,18 +2,10 @@
   "postgresql": {
     "name": "PostgreSQL",
     "description": "Enterprise-grade relational database, metadata store, and analytical lakehouse catalog",
-    "version": {
-      "recommended": "16.2",
-      "supported": [
-        "14",
-        "15",
-        "16",
-        "17"
-      ]
-    },
+    "version": "17",
     "runtime": {
       "type": "docker",
-      "image": "postgres:16-alpine",
+      "image": "postgres:17-alpine",
       "default_port": 5432,
       "default_database": "deloc_db",
       "default_user": "postgres",
@@ -21,8 +13,8 @@
     },
     "jdbc": {
       "driver_class": "org.postgresql.Driver",
-      "recommended_driver_version": "42.7.3",
-      "maven_coordinate": "org.postgresql:postgresql:42.7.3"
+      "recommended_driver_version": "42.7.4",
+      "maven_coordinate": "org.postgresql:postgresql:42.7.4"
     },
     "extensions": {
       "pg_stat_statements": {

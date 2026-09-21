@@ -1,4 +1,4 @@
-of <template>
+<template>
   <div class="flex flex-col h-full bg-slate-50/50">
     <main class="flex-1 overflow-y-auto p-6">
 
@@ -1264,6 +1264,7 @@ const searchQuery = ref('')
 const copiedKey = ref(null)
 
 const servicesList = ref([
+  /*
   {
     name: 'HDFS',
     version: 'v3.3.6',
@@ -1283,6 +1284,7 @@ const servicesList = ref([
       { label: 'IPC / RPC', port: 9000, url: 'localhost:9000', type: 'tcp' }
     ]
   },
+  */
   {
     name: 'PostgreSQL',
     version: 'v16.2',
@@ -1301,7 +1303,9 @@ const servicesList = ref([
     endpoints: [
       { label: 'PostgreSQL', port: 5432, url: 'localhost:5432', type: 'tcp' }
     ]
-  },
+  }
+  /*
+  ,
   {
     name: 'Spark',
     version: 'v3.5.0',
@@ -1324,6 +1328,7 @@ const servicesList = ref([
       { label: 'Spark RPC', port: 7077, url: 'spark://localhost:7077', type: 'tcp' }
     ]
   }
+  */
 ])
 
 const filteredServices = computed(() => {
