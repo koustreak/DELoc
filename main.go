@@ -5,8 +5,9 @@ import (
 	"embed"
 	"log"
 
-	"deloc/internal/bindings"
-	"deloc/internal/system"
+	"deloc/src/bindings"
+	"deloc/src/states"
+	"deloc/src/system"
 
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
@@ -21,11 +22,19 @@ var assets embed.FS
 var icon []byte
 
 func main() {
+	// Initialize persistent bbolt store
+	stateStore, err := states.NewStore()
+	if err != nil {
+		log.Printf("Warning: failed to initialize state store: %v", err)
+	} else {
+		defer stateStore.Close()
+	}
+
 	// Initialize enterprise-grade system monitor
 	sysMonitor := system.NewManager()
-	appService := bindings.NewService()
+	appService := bindings.NewService(stateStore)
 
-	err := wails.Run(&options.App{
+	err = wails.Run(&options.App{
 		Title:            "DELoc",
 		Width:            1280,
 		Height:           800,

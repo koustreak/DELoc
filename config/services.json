@@ -6,6 +6,7 @@
     "runtime": {
       "type": "docker",
       "image": "postgres:17-alpine",
+      "container_name": "deloc-postgres-<username>",
       "default_port": 5432,
       "default_database": "deloc_db",
       "default_user": "postgres",

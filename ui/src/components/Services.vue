@@ -44,8 +44,17 @@
             </div>
 
             <!-- Top Right: Details Action -->
+            <!-- Top Right: Status / Details Action -->
             <div class="flex items-center gap-1.5 flex-shrink-0">
+              <span
+                v-if="!service.isConfigured"
+                class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 border border-amber-300/80 text-amber-700 select-none"
+              >
+                <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                Setup Required
+              </span>
               <button
+                v-else
                 @click.stop="handleDetailsClick(service)"
                 title="Click for details"
                 :class="[
@@ -67,8 +76,25 @@
           <!-- Description -->
           <div class="text-xs text-slate-600 mb-3 leading-normal line-clamp-2 h-8">{{ service.description }}</div>
 
-          <!-- Endpoints & Ports Section -->
-          <div class="mb-4 rounded-md border border-slate-200/90 bg-white/90 p-2 shadow-[0_1px_2px_rgba(0,0,0,0.03)] flex flex-col gap-1.5">
+          <!-- Unconfigured Prompt Box -->
+          <div
+            v-if="!service.isConfigured"
+            class="mb-4 rounded-md border border-dashed border-amber-300/80 bg-amber-50/40 p-3.5 flex flex-col items-center justify-center text-center gap-1.5 shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
+          >
+            <div class="flex items-center gap-1.5 text-xs font-bold text-amber-800">
+              <CircleAlert class="w-4 h-4 text-amber-600 shrink-0" />
+              Service Not Configured
+            </div>
+            <p class="text-[11px] text-slate-500 leading-relaxed max-w-[280px]">
+              PostgreSQL is not yet initialized in DELoc. Use fast auto-configuration or customize your own settings.
+            </p>
+          </div>
+
+          <!-- Endpoints & Ports Section (Configured) -->
+          <div
+            v-else
+            class="mb-4 rounded-md border border-slate-200/90 bg-white/90 p-2 shadow-[0_1px_2px_rgba(0,0,0,0.03)] flex flex-col gap-1.5"
+          >
             <div class="flex items-center justify-between text-[10px] font-bold tracking-wider uppercase text-slate-400 px-0.5">
               <span>Endpoints &amp; Ports</span>
               <span class="text-[9px] font-mono text-slate-400 font-normal">
@@ -128,7 +154,29 @@
           </div>
 
           <!-- Action Buttons -->
-          <div class="flex items-center gap-2 mt-auto">
+          <!-- Unconfigured State: Auto vs Manual Configure -->
+          <div v-if="!service.isConfigured" class="flex items-center gap-2 mt-auto">
+            <button
+              @click="handleAutoConfigure(service)"
+              :disabled="isConfiguring"
+              class="flex-1 flex items-center justify-center gap-1.5 py-2 rounded text-[11px] font-semibold bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white shadow-sm transition-all active:scale-95 cursor-pointer disabled:opacity-50"
+              title="Apply recommended PostgreSQL 17 defaults"
+            >
+              <Zap class="w-3 h-3" />
+              <span>{{ isConfiguring ? 'Configuring...' : 'Auto Configure' }}</span>
+            </button>
+            <button
+              @click="handleManualConfigure(service)"
+              class="flex-1 flex items-center justify-center gap-1.5 py-2 rounded text-[11px] font-semibold bg-white hover:bg-slate-50 active:bg-slate-100 border border-slate-300 text-slate-700 shadow-sm transition-all active:scale-95 cursor-pointer"
+              title="Open settings modal to customize configuration"
+            >
+              <SlidersHorizontal class="w-3 h-3 text-slate-500" />
+              <span>Manual Configure</span>
+            </button>
+          </div>
+
+          <!-- Configured State: Start/Stop & Configure -->
+          <div v-else class="flex items-center gap-2 mt-auto">
             <button
               @click="toggleService(service)"
               :class="[
@@ -1252,12 +1300,20 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import {
-  Search, Layers, Play, Square, X, RefreshCw, ExternalLink, Copy, Check, Terminal, HardDrive, CircleAlert, SlidersHorizontal, Cpu, Folder, FolderOpen
+  Search, Layers, Play, Square, X, RefreshCw, ExternalLink, Copy, Check, Terminal, HardDrive, CircleAlert, SlidersHorizontal, Cpu, Folder, FolderOpen, Zap
 } from 'lucide-vue-next'
 import ServiceIcon from './common/ServiceIcon.vue'
-import { FetchDockerTags, OpenTerminal, SelectDirectory } from '../../wailsjs/go/bindings/Service.js'
+import {
+  FetchDockerTags,
+  OpenTerminal,
+  SelectDirectory,
+  IsServiceConfigured,
+  GetServiceState,
+  AutoConfigureService,
+  SaveServiceState
+} from '../../wailsjs/go/bindings/Service.js'
 import { BrowserOpenURL, ClipboardSetText } from '../../wailsjs/runtime/runtime.js'
 
 const searchQuery = ref('')
@@ -1289,16 +1345,20 @@ const servicesList = ref([
     name: 'PostgreSQL',
     version: 'v16.2',
     defaultTag: '16.2',
+    version: 'v17',
+    defaultTag: '17',
     status: 'Stopped',
+    isConfigured: false,
     containerName: 'deloc-postgres',
     network: 'deloc-net (bridge)',
     description: 'Powerful, open source object-relational database.',
+    description: 'Enterprise-grade relational database and analytical catalog.',
     repos: ['postgres', 'bitnami/postgresql'],
     volumes: ['deloc_postgres_data:/var/lib/postgresql/data'],
     environment: [
       'POSTGRES_USER=postgres',
       'POSTGRES_PASSWORD=postgres',
-      'POSTGRES_DB=deloc'
+      'POSTGRES_DB=deloc_db'
     ],
     endpoints: [
       { label: 'PostgreSQL', port: 5432, url: 'localhost:5432', type: 'tcp' }
@@ -1344,6 +1404,61 @@ const filteredServices = computed(() => {
 const showConfigModal = ref(false)
 const selectedService = ref(null)
 const configTab = ref('resources')
+const isConfiguring = ref(false)
+
+async function checkServicesState() {
+  for (const s of servicesList.value) {
+    try {
+      if (typeof GetServiceState === 'function') {
+        const state = await GetServiceState(s.name.toLowerCase())
+        if (state && state.configured) {
+          s.isConfigured = true
+          s.status = state.status || 'Stopped'
+          if (state.port && s.endpoints?.[0]) {
+            s.endpoints[0].port = state.port
+            s.endpoints[0].url = `localhost:${state.port}`
+          }
+        } else {
+          s.isConfigured = false
+        }
+      }
+    } catch (err) {
+      console.warn('Failed to fetch state for', s.name, err)
+      s.isConfigured = false
+    }
+  }
+}
+
+onMounted(async () => {
+  await checkServicesState()
+})
+
+async function handleAutoConfigure(service) {
+  isConfiguring.value = true
+  try {
+    if (typeof AutoConfigureService === 'function') {
+      const state = await AutoConfigureService(service.name)
+      if (state && state.configured) {
+        service.isConfigured = true
+        service.status = state.status || 'Stopped'
+        if (state.port && service.endpoints?.[0]) {
+          service.endpoints[0].port = state.port
+          service.endpoints[0].url = `localhost:${state.port}`
+        }
+      }
+    } else {
+      service.isConfigured = true
+    }
+  } catch (err) {
+    console.error('Failed to auto configure service:', err)
+  } finally {
+    isConfiguring.value = false
+  }
+}
+
+function handleManualConfigure(service) {
+  openConfig(service)
+}
 
 const serviceConfigs = ref({
   HDFS: {
@@ -1634,8 +1749,30 @@ function openConfig(service) {
   fetchTagsForRepo(initialRepo)
 }
 
-function applyConfig() {
-  // Apply the selected configuration
+async function applyConfig() {
+  if (selectedService.value) {
+    try {
+      if (typeof SaveServiceState === 'function') {
+        await SaveServiceState(selectedService.value.name, {
+          configured: true,
+          status: selectedService.value.status || 'Stopped',
+          port: 5432,
+          database: serviceConfigs.value.PostgreSQL?.dbName || 'deloc_db',
+          user: 'postgres',
+          dataDir: '~/.deloc/data/postgres',
+          config: {
+            image: configForm.value.fullImage || 'postgres:17-alpine',
+            containerName: selectedService.value.containerName || 'deloc-postgres',
+            cpuCores: configForm.value.cpuCores,
+            memory: `${configForm.value.memory}${configForm.value.memoryUnit}`
+          }
+        })
+      }
+      selectedService.value.isConfigured = true
+    } catch (err) {
+      console.error('Failed to save service config:', err)
+    }
+  }
   showConfigModal.value = false
 }
 

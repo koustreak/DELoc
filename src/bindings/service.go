@@ -12,6 +12,8 @@ import (
 	"time"
 
 	wailsRuntime "github.com/wailsapp/wails/v2/pkg/runtime"
+
+	"deloc/src/states"
 )
 
 // Service exposes backend APIs to the Wails frontend runtime.
@@ -20,15 +22,17 @@ type Service struct {
 	cache  map[string][]string
 	mu     sync.RWMutex
 	client *http.Client
+	store  *states.Store
 }
 
-// NewService creates a new bindings service instance.
-func NewService() *Service {
+// NewService creates a new bindings service instance with persistent store.
+func NewService(store *states.Store) *Service {
 	return &Service{
 		cache: make(map[string][]string),
 		client: &http.Client{
 			Timeout: 8 * time.Second,
 		},
+		store: store,
 	}
 }
 
@@ -190,4 +194,72 @@ func (s *Service) SelectDirectory(title string) (string, error) {
 	return wailsRuntime.OpenDirectoryDialog(s.ctx, wailsRuntime.OpenDialogOptions{
 		Title: dlgTitle,
 	})
+}
+
+// IsServiceConfigured checks if a service is marked configured in bbolt.
+func (s *Service) IsServiceConfigured(serviceName string) (bool, error) {
+	if s.store == nil {
+		return false, fmt.Errorf("persistent store not initialized")
+	}
+	name := strings.ToLower(strings.TrimSpace(serviceName))
+	return s.store.IsServiceConfigured(name)
+}
+
+// GetServiceState returns the persisted state of a service from bbolt.
+func (s *Service) GetServiceState(serviceName string) (*states.ServiceState, error) {
+	if s.store == nil {
+		return nil, fmt.Errorf("persistent store not initialized")
+	}
+	name := strings.ToLower(strings.TrimSpace(serviceName))
+	return s.store.GetServiceState(name)
+}
+
+// AutoConfigureService automatically applies recommended defaults for a service and marks it configured.
+func (s *Service) AutoConfigureService(serviceName string) (*states.ServiceState, error) {
+	if s.store == nil {
+		return nil, fmt.Errorf("persistent store not initialized")
+	}
+
+	name := strings.ToLower(strings.TrimSpace(serviceName))
+	var state states.ServiceState
+
+	switch name {
+	case "postgresql", "postgres":
+		state = states.ServiceState{
+			Configured:   true,
+			ContainerID:  "",
+			Status:       "Stopped",
+			Port:         5432,
+			Database:     "deloc_db",
+			User:         "postgres",
+			DataDir:      "~/.deloc/data/postgres",
+			ConfiguredAt: time.Now().Unix(),
+			Config: map[string]any{
+				"image":         "postgres:17-alpine",
+				"containerName": "deloc-postgres",
+				"version":       "17",
+			},
+		}
+	default:
+		return nil, fmt.Errorf("unsupported service for auto-configuration: %s", serviceName)
+	}
+
+	if err := s.store.SaveServiceState(name, &state); err != nil {
+		return nil, fmt.Errorf("failed to save state: %w", err)
+	}
+
+	return &state, nil
+}
+
+// SaveServiceState persists custom service configuration to bbolt.
+func (s *Service) SaveServiceState(serviceName string, state states.ServiceState) error {
+	if s.store == nil {
+		return fmt.Errorf("persistent store not initialized")
+	}
+	name := strings.ToLower(strings.TrimSpace(serviceName))
+	state.Configured = true
+	if state.ConfiguredAt == 0 {
+		state.ConfiguredAt = time.Now().Unix()
+	}
+	return s.store.SaveServiceState(name, &state)
 }
