@@ -1,0 +1,28 @@
+{
+  "network": {
+    "name": "deloc-net",
+    "driver": "bridge",
+    "enable_ipv6": false,
+    "attachable": true,
+    "internal": false,
+    "ipam": {
+      "driver": "default",
+      "config": [
+        {
+          "subnet": "172.28.0.0/16",
+          "gateway": "172.28.0.1"
+        }
+      ]
+    },
+    "labels": {
+      "com.deloc.description": "DELoc dedicated bridge network for inter-service communication",
+      "com.deloc.managed": "true"
+    },
+    "service_dns_aliases": {
+      "postgresql": "deloc-postgres",
+      "spark": "deloc-spark-master",
+      "hdfs": "deloc-hdfs-namenode"
+    }
+  }
+}
+

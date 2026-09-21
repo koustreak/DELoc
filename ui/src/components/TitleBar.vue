@@ -24,6 +24,23 @@
         <!-- The Settings Menu -->
         <div v-if="showSettingsMenu" class="absolute top-[40px] right-0 w-80 bg-white rounded-bl-md rounded-br-md shadow-[0_10px_25px_-5px_rgba(0,0,0,0.3)] border border-slate-200 z-[100] text-slate-800 overflow-hidden flex flex-col font-sans cursor-default">
           
+          <!-- System Configuration JSONs -->
+          <div class="p-3 border-b border-slate-100 bg-slate-50/80">
+            <div class="flex items-center justify-between mb-1.5">
+              <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">System Config</span>
+              <span class="text-[9px] font-mono bg-blue-50 text-blue-600 border border-blue-200/60 px-1.5 py-0.5 rounded">config/*.json</span>
+            </div>
+            <button
+              @click="openConfigEditor"
+              class="w-full flex items-center justify-between px-3 py-2 bg-white hover:bg-blue-50/50 border border-slate-200 hover:border-blue-300 rounded text-xs font-medium text-slate-700 hover:text-blue-600 transition-colors shadow-sm group cursor-pointer"
+            >
+              <div class="flex items-center gap-2">
+                <FileCode class="w-4 h-4 text-blue-500 group-hover:scale-110 transition-transform" />
+                <span>Manage JSON Configs</span>
+              </div>
+              <ChevronRight class="w-3.5 h-3.5 text-slate-400 group-hover:text-blue-500 transition-colors" />
+            </button>
+          </div>
 
           <!-- Networking -->
           <div class="p-3.5 border-b border-slate-100 flex flex-col gap-2">
@@ -37,15 +54,46 @@
             </div>
           </div>
 
-          <!-- Extensions -->
-          <div class="p-3.5 flex flex-col gap-2 bg-slate-50/50">
-            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Extension Paths</span>
-            <div class="flex flex-col gap-1.5">
-              <label class="text-[11px] text-slate-600 font-medium">Java Home</label>
-              <input type="text" value="/opt/jdk-11/" class="w-full bg-white border border-slate-200 rounded px-2.5 py-1.5 text-xs font-mono text-slate-600 outline-none shadow-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" />
-              
-              <label class="text-[11px] text-slate-600 font-medium mt-1">Python Base</label>
-              <input type="text" value="/opt/my_env/" class="w-full bg-white border border-slate-200 rounded px-2.5 py-1.5 text-xs font-mono text-slate-600 outline-none shadow-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" />
+          <!-- Version & Author Details -->
+          <div class="p-3.5 flex flex-col gap-2 bg-slate-50/70 border-t border-slate-100">
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">About & Version Details</span>
+            
+            <div class="flex flex-col gap-1.5 text-xs">
+              <div class="flex items-center justify-between py-1.5 px-2.5 rounded bg-white border border-slate-200/80 shadow-xs">
+                <span class="text-[11px] text-slate-500 font-medium flex items-center gap-1.5">
+                  <Tag class="w-3.5 h-3.5 text-blue-500" /> Version
+                </span>
+                <span class="font-mono text-[11px] font-semibold text-slate-700 bg-slate-100 px-1.5 py-0.5 rounded">v1.0.0</span>
+              </div>
+
+              <div class="flex items-center justify-between py-1.5 px-2.5 rounded bg-white border border-slate-200/80 shadow-xs">
+                <span class="text-[11px] text-slate-500 font-medium flex items-center gap-1.5">
+                  <User class="w-3.5 h-3.5 text-blue-500" /> Developer
+                </span>
+                <span class="text-[11px] font-medium text-slate-700">Koushik (Bhootnath)</span>
+              </div>
+
+              <div class="flex items-center justify-between py-1.5 px-2.5 rounded bg-white border border-slate-200/80 shadow-xs">
+                <span class="text-[11px] text-slate-500 font-medium flex items-center gap-1.5">
+                  <Mail class="w-3.5 h-3.5 text-blue-500" /> Author Email
+                </span>
+                <div class="flex items-center gap-1.5">
+                  <a
+                    href="mailto:koushik.dutta.py@protonmail.com"
+                    class="font-mono text-[10.5px] text-blue-600 hover:text-blue-700 hover:underline select-all"
+                  >
+                    koushik.dutta.py@protonmail.com
+                  </a>
+                  <button
+                    @click="copyEmail"
+                    class="p-1 hover:bg-slate-100 rounded text-slate-400 hover:text-slate-700 transition-colors cursor-pointer"
+                    :title="emailCopied ? 'Copied!' : 'Copy email'"
+                  >
+                    <Check v-if="emailCopied" class="w-3 h-3 text-emerald-600" />
+                    <Copy v-else class="w-3 h-3" />
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -83,12 +131,29 @@
         </svg>
       </button>
     </div>
+
+    <!-- Configuration Editor Modal -->
+    <ConfigEditorModal :is-open="showConfigEditor" @close="showConfigEditor = false" />
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { Settings, Bell, Sun, Moon, Monitor } from 'lucide-vue-next'
+import {
+  Settings,
+  Bell,
+  Sun,
+  Moon,
+  Monitor,
+  FileCode,
+  ChevronRight,
+  Tag,
+  User,
+  Mail,
+  Copy,
+  Check
+} from 'lucide-vue-next'
+import ConfigEditorModal from './ConfigEditorModal.vue'
 import {
   WindowMinimise,
   WindowToggleMaximise,
@@ -102,7 +167,24 @@ import {
 const isMaximized = ref(false)
 const isFullscreen = ref(false)
 const showSettingsMenu = ref(false)
+const showConfigEditor = ref(false)
 const currentTheme = ref('light')
+const emailCopied = ref(false)
+
+function copyEmail() {
+  if (navigator?.clipboard?.writeText) {
+    navigator.clipboard.writeText('koushik.dutta.py@protonmail.com')
+  }
+  emailCopied.value = true
+  setTimeout(() => {
+    emailCopied.value = false
+  }, 2000)
+}
+
+function openConfigEditor() {
+  showSettingsMenu.value = false
+  showConfigEditor.value = true
+}
 
 function setTheme(theme) {
   currentTheme.value = theme

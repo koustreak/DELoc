@@ -533,3 +533,75 @@ func (s *Service) SaveServiceState(serviceName string, state states.ServiceState
 	}
 	return s.store.SaveServiceState(name, &state)
 }
+
+// ConfigFileInfo represents metadata about an available configuration file.
+type ConfigFileInfo struct {
+	Name        string `json:"name"`
+	Path        string `json:"path"`
+	Description string `json:"description"`
+}
+
+// ListConfigFiles returns the list of managed configuration JSON files in config/.
+func (s *Service) ListConfigFiles() ([]ConfigFileInfo, error) {
+	configs := []ConfigFileInfo{
+		{Name: "services.json", Path: "config/services.json", Description: "Database & infrastructure services (PostgreSQL, versions, containers)"},
+		{Name: "network.json", Path: "config/network.json", Description: "Docker bridge network, subnets, and DNS service aliases"},
+		{Name: "python.json", Path: "config/python.json", Description: "Python runtime, virtualenv settings, and Data Engineering packages"},
+		{Name: "java.json", Path: "config/java.json", Description: "Java OpenJDK versions, runtime compatibility, and JVM options"},
+		{Name: "scala.json", Path: "config/scala.json", Description: "Scala language versions and SBT build tool matrix"},
+		{Name: "notebook.json", Path: "config/notebook.json", Description: "JupyterLab and Apache Zeppelin versions and extensions"},
+	}
+	return configs, nil
+}
+
+// GetConfigFile reads and returns the raw JSON string of a configuration file.
+func (s *Service) GetConfigFile(filename string) (string, error) {
+	clean := filepath.Base(filepath.Clean(filename))
+	if !strings.HasSuffix(clean, ".json") {
+		return "", fmt.Errorf("invalid config file extension, must be .json")
+	}
+
+	pathsToTry := []string{
+		filepath.Join("config", clean),
+		filepath.Join(".", "config", clean),
+	}
+	if home, err := os.UserHomeDir(); err == nil {
+		pathsToTry = append(pathsToTry, filepath.Join(home, ".deloc", "config", clean))
+	}
+
+	for _, p := range pathsToTry {
+		data, err := os.ReadFile(p)
+		if err == nil {
+			return string(data), nil
+		}
+	}
+
+	return "", fmt.Errorf("config file '%s' not found", clean)
+}
+
+// SaveConfigFile validates and writes raw JSON content back to a configuration file.
+func (s *Service) SaveConfigFile(filename string, content string) error {
+	clean := filepath.Base(filepath.Clean(filename))
+	if !strings.HasSuffix(clean, ".json") {
+		return fmt.Errorf("invalid config file extension, must be .json")
+	}
+
+	// Validate that content is valid JSON before writing
+	var js any
+	if err := json.Unmarshal([]byte(content), &js); err != nil {
+		return fmt.Errorf("invalid JSON syntax: %w", err)
+	}
+
+	// Format nicely
+	prettyJSON, err := json.MarshalIndent(js, "", "  ")
+	if err != nil {
+		prettyJSON = []byte(content)
+	}
+
+	targetPath := filepath.Join("config", clean)
+	if err := os.MkdirAll(filepath.Dir(targetPath), 0755); err != nil {
+		return fmt.Errorf("failed to create config directory: %w", err)
+	}
+
+	return os.WriteFile(targetPath, prettyJSON, 0644)
+}
