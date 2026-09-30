@@ -82,19 +82,24 @@
           <div class="text-xs text-slate-600 mb-3 leading-relaxed">{{ service.description }}</div>
 
           <!-- Metadata & Inspect Link (Configured State) -->
-          <div v-if="service.isConfigured" class="mb-4 flex flex-col gap-1.5 p-2.5 rounded-lg bg-slate-50/80 border border-slate-200/70 text-xs">
-            <div class="flex items-center justify-between text-slate-600">
-              <span class="text-slate-400 font-medium text-[11px]">Docker Image:</span>
-              <span class="font-mono text-slate-800 text-[11px] truncate max-w-[190px]">
-                {{ service.config?.image || (service.repos?.[0] + ':' + service.defaultTag) }}
-              </span>
+          <div v-if="service.isConfigured" class="mb-4 flex flex-col p-2.5 rounded-lg bg-slate-50/80 border border-slate-200/70 text-xs">
+            <!-- Scrollable Metadata Area: Full Docker Image Tag & All Ports -->
+            <div class="overflow-x-auto pb-1.5 space-y-1.5 custom-meta-scroll">
+              <div class="flex items-center gap-2 whitespace-nowrap">
+                <span class="text-slate-400 font-medium text-[11px] shrink-0">Docker Image:</span>
+                <span class="font-mono text-slate-800 text-[11px] font-medium bg-white px-1.5 py-0.5 rounded border border-slate-200/70 select-all">
+                  {{ service.config?.image || (service.repos?.[0] + ':' + service.defaultTag) }}
+                </span>
+              </div>
+              <div class="flex items-center gap-2 whitespace-nowrap">
+                <span class="text-slate-400 font-medium text-[11px] shrink-0">Port(s) Used:</span>
+                <span class="font-mono text-slate-800 text-[11px] font-medium bg-white px-1.5 py-0.5 rounded border border-slate-200/70 select-all">
+                  {{ service.endpoints?.map(e => e.port).filter(Boolean).join(', ') || service.port || '5432' }}
+                </span>
+              </div>
             </div>
-            <div class="flex items-center justify-between text-slate-600">
-              <span class="text-slate-400 font-medium text-[11px]">Port(s) Used:</span>
-              <span class="font-mono text-slate-800 text-[11px]">
-                {{ service.endpoints?.map(e => e.port).filter(Boolean).join(', ') || service.port || '5432' }}
-              </span>
-            </div>
+
+            <!-- Inspect Link -->
             <div class="pt-1.5 border-t border-slate-200/60 flex items-center justify-end">
               <button
                 @click.stop="handleDetailsClick(service)"
@@ -2235,5 +2240,21 @@ async function chooseDirectory(onSelect) {
 .modal-enter-from,
 .modal-leave-to {
   opacity: 0;
+}
+
+/* Custom sleek horizontal scrollbar for metadata tags */
+.custom-meta-scroll::-webkit-scrollbar {
+  height: 3.5px;
+}
+.custom-meta-scroll::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.03);
+  border-radius: 4px;
+}
+.custom-meta-scroll::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.5);
+  border-radius: 4px;
+}
+.custom-meta-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, 0.8);
 }
 </style>
