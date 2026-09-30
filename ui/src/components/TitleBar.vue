@@ -22,7 +22,7 @@
         </button>
 
         <!-- The Settings Menu -->
-        <div v-if="showSettingsMenu" class="absolute top-[40px] right-0 w-80 bg-white rounded-bl-md rounded-br-md shadow-[0_10px_25px_-5px_rgba(0,0,0,0.3)] border border-slate-200 z-[100] text-slate-800 overflow-hidden flex flex-col font-sans cursor-default">
+        <div v-if="showSettingsMenu" class="absolute top-[40px] right-0 w-84 bg-white rounded-bl-md rounded-br-md shadow-[0_10px_25px_-5px_rgba(0,0,0,0.3)] border border-slate-200 z-[100] text-slate-800 overflow-hidden flex flex-col font-sans cursor-default">
           
           <!-- System Configuration JSONs -->
           <div class="p-3 border-b border-slate-100 bg-slate-50/80">
@@ -42,12 +42,58 @@
             </button>
           </div>
 
-          <!-- Networking -->
-          <div class="p-3.5 border-b border-slate-100 flex flex-col gap-2">
-            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Data & Networking</span>
-            <div class="flex flex-col gap-1.5">
+          <!-- Storage & Paths -->
+          <div class="p-3.5 border-b border-slate-100 flex flex-col gap-2.5">
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Storage & Volume Paths</span>
+            
+            <!-- Archive Target Path -->
+            <div class="flex flex-col gap-1">
               <label class="text-[11px] text-slate-600 font-medium">Archive Target Path</label>
-              <input type="text" value="/home/DELoc/archives" class="w-full bg-slate-50 border border-slate-200 rounded px-2.5 py-1.5 text-xs font-mono text-slate-600 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" />
+              <div class="relative flex items-center">
+                <input
+                  type="text"
+                  v-model="archivePath"
+                  @change="saveSettings"
+                  placeholder="~/.deloc/archives"
+                  class="w-full bg-slate-50 border border-slate-200 rounded pl-2.5 pr-8 py-1.5 text-xs font-mono text-slate-700 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                />
+                <button
+                  @click="browseArchivePath"
+                  type="button"
+                  class="absolute right-1.5 p-1 text-slate-400 hover:text-blue-600 hover:bg-slate-200/60 rounded transition-colors cursor-pointer"
+                  title="Browse folder..."
+                >
+                  <FolderOpen class="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+
+            <!-- Root Volume Path -->
+            <div class="flex flex-col gap-1">
+              <div class="flex items-center justify-between">
+                <label class="text-[11px] text-slate-600 font-medium">Root Volume Path</label>
+                <span class="text-[9.5px] font-mono text-blue-600 bg-blue-50 px-1.5 py-0.2 rounded border border-blue-200/50">/&lt;servicename&gt;/</span>
+              </div>
+              <div class="relative flex items-center">
+                <input
+                  type="text"
+                  v-model="rootVolumePath"
+                  @change="saveSettings"
+                  placeholder="~/.deloc/data"
+                  class="w-full bg-slate-50 border border-slate-200 rounded pl-2.5 pr-8 py-1.5 text-xs font-mono text-slate-700 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                />
+                <button
+                  @click="browseRootVolumePath"
+                  type="button"
+                  class="absolute right-1.5 p-1 text-slate-400 hover:text-blue-600 hover:bg-slate-200/60 rounded transition-colors cursor-pointer"
+                  title="Browse folder..."
+                >
+                  <FolderOpen class="w-3.5 h-3.5" />
+                </button>
+              </div>
+              <span class="text-[10px] text-slate-400 leading-tight">
+                All services store container volumes under: <span class="font-mono text-slate-600">{{ rootVolumePath || '~/.deloc/data' }}/&lt;service&gt;/</span>
+              </span>
             </div>
           </div>
 
@@ -159,9 +205,15 @@ import {
   Mail,
   Copy,
   Check,
-  ExternalLink
+  ExternalLink,
+  FolderOpen
 } from 'lucide-vue-next'
 import ConfigEditorModal from './ConfigEditorModal.vue'
+import {
+  GetAppSettings,
+  SaveAppSettings,
+  SelectDirectory
+} from '../../wailsjs/go/bindings/Service.js'
 import {
   WindowMinimise,
   WindowToggleMaximise,
@@ -179,6 +231,64 @@ const showSettingsMenu = ref(false)
 const showConfigEditor = ref(false)
 const currentTheme = ref('light')
 const emailCopied = ref(false)
+
+const archivePath = ref('~/.deloc/archives')
+const rootVolumePath = ref('~/.deloc/data')
+
+async function loadSettings() {
+  try {
+    if (typeof GetAppSettings === 'function') {
+      const res = await GetAppSettings()
+      if (res) {
+        if (res.archivePath) archivePath.value = res.archivePath
+        if (res.rootVolumePath) rootVolumePath.value = res.rootVolumePath
+      }
+    }
+  } catch (err) {
+    console.warn('Could not load app settings:', err)
+  }
+}
+
+async function saveSettings() {
+  try {
+    if (typeof SaveAppSettings === 'function') {
+      await SaveAppSettings({
+        archivePath: archivePath.value,
+        rootVolumePath: rootVolumePath.value
+      })
+    }
+  } catch (err) {
+    console.warn('Could not save app settings:', err)
+  }
+}
+
+async function browseArchivePath() {
+  try {
+    if (typeof SelectDirectory === 'function') {
+      const selected = await SelectDirectory('Select Archive Target Directory')
+      if (selected) {
+        archivePath.value = selected
+        await saveSettings()
+      }
+    }
+  } catch (err) {
+    console.warn('Directory selection failed:', err)
+  }
+}
+
+async function browseRootVolumePath() {
+  try {
+    if (typeof SelectDirectory === 'function') {
+      const selected = await SelectDirectory('Select Root Volume Directory')
+      if (selected) {
+        rootVolumePath.value = selected
+        await saveSettings()
+      }
+    }
+  } catch (err) {
+    console.warn('Directory selection failed:', err)
+  }
+}
 
 function openUrl(url) {
   try {
@@ -264,6 +374,7 @@ function quit() {
 
 onMounted(() => {
   checkWindowState()
+  loadSettings()
   window.addEventListener('resize', checkWindowState)
 })
 </script>
@@ -343,4 +454,3 @@ onMounted(() => {
   color: #ff8c00;
 }
 </style>
-

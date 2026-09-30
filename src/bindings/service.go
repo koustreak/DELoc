@@ -406,10 +406,13 @@ func (s *Service) AutoConfigureService(serviceName string) (*states.ServiceState
 	if dbUser == "" {
 		dbUser = "postgres"
 	}
-	dataDir := cfg.Runtime.DefaultDataDir
-	if dataDir == "" {
-		dataDir = "~/.deloc/data/postgres"
+	// Resolve volume path under RootVolumePath: <rootVolumePath>/<serviceName>/
+	appSettings, _ := s.store.GetAppSettings()
+	rootVolume := "~/.deloc/data"
+	if appSettings != nil && strings.TrimSpace(appSettings.RootVolumePath) != "" {
+		rootVolume = strings.TrimSpace(appSettings.RootVolumePath)
 	}
+	dataDir := filepath.Join(rootVolume, name)
 
 	// 2. Insert the record in bbolt, but DO NOT start the container (status: Stopped)
 	state := states.ServiceState{
@@ -700,4 +703,20 @@ func (s *Service) SaveConfigFile(filename string, content string) error {
 	}
 
 	return os.WriteFile(targetPath, prettyJSON, 0644)
+}
+
+// GetAppSettings returns the stored global application settings.
+func (s *Service) GetAppSettings() (*states.AppSettings, error) {
+	if s.store == nil {
+		return nil, fmt.Errorf("persistent store not initialized")
+	}
+	return s.store.GetAppSettings()
+}
+
+// SaveAppSettings updates and stores global application settings in bbolt.
+func (s *Service) SaveAppSettings(settings states.AppSettings) error {
+	if s.store == nil {
+		return fmt.Errorf("persistent store not initialized")
+	}
+	return s.store.SaveAppSettings(&settings)
 }

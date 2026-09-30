@@ -13,8 +13,15 @@ import (
 
 const (
 	ServicesBucket = "services"
+	SettingsBucket = "settings"
 	DBFileName     = "state.db"
 )
+
+// AppSettings represents global application-level storage and directory preferences.
+type AppSettings struct {
+	ArchivePath    string `json:"archivePath"`
+	RootVolumePath string `json:"rootVolumePath"`
+}
 
 // ServiceState represents the persisted configuration and runtime state of a service.
 type ServiceState struct {
@@ -57,7 +64,10 @@ func NewStore() (*Store, error) {
 
 	// Ensure required buckets exist
 	err = db.Update(func(tx *bolt.Tx) error {
-		_, err := tx.CreateBucketIfNotExists([]byte(ServicesBucket))
+		if _, err := tx.CreateBucketIfNotExists([]byte(ServicesBucket)); err != nil {
+			return err
+		}
+		_, err := tx.CreateBucketIfNotExists([]byte(SettingsBucket))
 		return err
 	})
 	if err != nil {
@@ -147,5 +157,48 @@ func (s *Store) SaveServiceState(serviceName string, state *ServiceState) error 
 			return fmt.Errorf("bucket %s does not exist", ServicesBucket)
 		}
 		return b.Put([]byte(serviceName), data)
+	})
+}
+
+// GetAppSettings returns the stored global application settings, falling back to ~/.deloc defaults.
+func (s *Store) GetAppSettings() (*AppSettings, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	settings := &AppSettings{
+		ArchivePath:    "~/.deloc/archives",
+		RootVolumePath: "~/.deloc/data",
+	}
+
+	err := s.db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(SettingsBucket))
+		if b == nil {
+			return nil
+		}
+		data := b.Get([]byte("app_settings"))
+		if data == nil {
+			return nil
+		}
+		return json.Unmarshal(data, settings)
+	})
+	return settings, err
+}
+
+// SaveAppSettings persists global application settings to bbolt.
+func (s *Store) SaveAppSettings(settings *AppSettings) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	data, err := json.Marshal(settings)
+	if err != nil {
+		return err
+	}
+
+	return s.db.Update(func(tx *bolt.Tx) error {
+		b, err := tx.CreateBucketIfNotExists([]byte(SettingsBucket))
+		if err != nil {
+			return err
+		}
+		return b.Put([]byte("app_settings"), data)
 	})
 }
