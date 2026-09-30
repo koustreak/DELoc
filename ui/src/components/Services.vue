@@ -25,7 +25,7 @@
           v-for="service in filteredServices"
           :key="service.name"
           class="bg-[#f8fafc] rounded-md border shadow-[inset_0_1px_0_rgba(255,255,255,1),0_4px_6px_-2px_rgba(0,0,0,0.05),0_8px_12px_-3px_rgba(0,0,0,0.03)] flex flex-col p-4 transition-all hover:-translate-y-1 hover:shadow-[inset_0_1px_0_rgba(255,255,255,1),0_8px_12px_-3px_rgba(60,120,216,0.15)] group"
-          :class="service.status === 'Running' ? 'border-emerald-400/80 ring-1 ring-emerald-400/30' : 'border-slate-300'"
+          :class="service.status === 'Running' ? 'border-emerald-400/80 ring-1 ring-emerald-400/30' : (service.status === 'Starting' ? 'border-amber-400/80 ring-1 ring-amber-400/30' : 'border-slate-300')"
         >
           <!-- Logo, Name & Actions -->
           <div class="flex items-start justify-between gap-2 mb-2 pb-2.5 border-b border-slate-200/60">
@@ -43,7 +43,6 @@
               </div>
             </div>
 
-            <!-- Top Right: Details Action -->
             <!-- Top Right: Status / Details Action -->
             <div class="flex items-center gap-1.5 flex-shrink-0">
               <span
@@ -53,23 +52,38 @@
                 <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
                 Setup Required
               </span>
-              <button
-                v-else
-                @click.stop="handleDetailsClick(service)"
-                title="Click for details"
-                :class="[
-                  'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-semibold border transition-all cursor-pointer select-none',
-                  service.status === 'Running'
-                    ? 'bg-emerald-50 border-emerald-300 text-emerald-700 hover:bg-emerald-100'
-                    : 'bg-slate-100 border-slate-200 text-slate-600 hover:bg-slate-200/70 hover:text-slate-800'
-                ]"
-              >
+              <template v-else>
+                <!-- Live Status Badge -->
                 <span
-                  v-if="service.status === 'Running'"
-                  class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"
-                ></span>
-                Details
-              </button>
+                  :class="[
+                    'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border select-none',
+                    service.status === 'Running'
+                      ? 'bg-emerald-50 border-emerald-300 text-emerald-700'
+                      : service.status === 'Starting'
+                      ? 'bg-amber-50 border-amber-300 text-amber-700 animate-pulse'
+                      : service.status === 'Stopping'
+                      ? 'bg-rose-50 border-rose-300 text-rose-700 animate-pulse'
+                      : 'bg-slate-100 border-slate-200 text-slate-500'
+                  ]"
+                >
+                  <RefreshCw v-if="service.status === 'Starting' || service.status === 'Stopping'" class="w-2.5 h-2.5 animate-spin" />
+                  <span
+                    v-else
+                    class="w-1.5 h-1.5 rounded-full"
+                    :class="service.status === 'Running' ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'"
+                  ></span>
+                  <span>{{ service.status }}</span>
+                </span>
+
+                <!-- Details Action Button -->
+                <button
+                  @click.stop="handleDetailsClick(service)"
+                  title="Click for details"
+                  class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 hover:text-slate-800 transition-all cursor-pointer select-none shadow-xs"
+                >
+                  Details
+                </button>
+              </template>
             </div>
           </div>
 
@@ -181,26 +195,32 @@
           <div v-else class="flex items-center gap-2 mt-auto">
             <button
               @click="toggleService(service)"
-              :disabled="isOperatingService"
+              :disabled="service.status === 'Starting' || service.status === 'Stopping'"
               :class="[
-                'flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded text-[11px] font-semibold transition-all active:scale-95 shadow-sm cursor-pointer disabled:opacity-60',
+                'flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded text-[11px] font-semibold transition-all active:scale-95 shadow-sm cursor-pointer disabled:opacity-75 disabled:cursor-not-allowed',
                 service.status === 'Running'
                   ? 'bg-rose-600 hover:bg-rose-700 text-white shadow-rose-900/20'
+                  : service.status === 'Starting'
+                  ? 'bg-amber-500 text-white shadow-amber-900/20'
+                  : service.status === 'Stopping'
+                  ? 'bg-rose-400 text-white shadow-rose-900/20'
                   : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-900/20'
               ]"
             >
-              <RefreshCw v-if="isOperatingService" class="w-2.5 h-2.5 animate-spin" />
+              <RefreshCw v-if="service.status === 'Starting' || service.status === 'Stopping'" class="w-3 h-3 animate-spin" />
               <Square v-else-if="service.status === 'Running'" class="w-2.5 h-2.5" fill="currentColor" />
               <Play v-else class="w-2.5 h-2.5" fill="currentColor" />
-              {{ service.status === 'Running' ? 'Stop' : 'Start' }}
+              <span>
+                {{ service.status === 'Starting' ? 'Starting...' : service.status === 'Stopping' ? 'Stopping...' : service.status === 'Running' ? 'Stop' : 'Start' }}
+              </span>
             </button>
             <button
               @click="openConfig(service)"
-              :disabled="service.configType === 'auto' || isOperatingService"
+              :disabled="service.configType === 'auto' || service.status === 'Starting' || service.status === 'Stopping'"
               :title="service.configType === 'auto' ? 'Reconfiguration is disabled because this service was auto-configured from services.json' : 'Reconfigure service parameters'"
               :class="[
                 'flex-1 py-1.5 rounded text-[11px] font-semibold shadow-sm transition-all border',
-                service.configType === 'auto'
+                service.configType === 'auto' || service.status === 'Starting' || service.status === 'Stopping'
                   ? 'bg-slate-50 border-slate-200 text-slate-400 cursor-not-allowed opacity-60'
                   : 'bg-slate-100 hover:bg-slate-200 active:bg-slate-300 border-slate-300/80 text-slate-700 cursor-pointer active:scale-95'
               ]"
@@ -1357,6 +1377,55 @@
         </div>
       </Transition>
     </Teleport>
+
+    <!-- ── Service Error Modal ── -->
+    <Teleport to="body">
+      <Transition name="modal">
+        <div
+          v-if="serviceErrorModal.isOpen"
+          class="fixed inset-0 z-[220] flex items-center justify-center bg-black/50 backdrop-blur-[2px] p-4 select-none"
+          @click.self="serviceErrorModal.isOpen = false"
+        >
+          <div class="bg-white rounded-xl shadow-2xl border border-rose-200 w-[480px] max-w-[95vw] flex flex-col overflow-hidden">
+            <!-- Header -->
+            <div class="flex items-center justify-between px-5 py-3.5 border-b border-rose-100 bg-rose-50/60">
+              <div class="flex items-center gap-2.5">
+                <div class="w-6 h-6 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center">
+                  <CircleAlert class="w-4 h-4" />
+                </div>
+                <span class="font-bold text-slate-800 text-sm tracking-tight">{{ serviceErrorModal.title }}</span>
+              </div>
+              <button
+                @click="serviceErrorModal.isOpen = false"
+                class="text-slate-400 hover:text-slate-700 transition-colors p-1 rounded hover:bg-rose-100/60 cursor-pointer"
+              >
+                <X class="w-4 h-4" />
+              </button>
+            </div>
+
+            <!-- Body -->
+            <div class="p-5 flex flex-col gap-3">
+              <div class="p-3 rounded-lg bg-rose-50/60 border border-rose-200/80 text-xs text-rose-800 font-mono leading-relaxed break-words whitespace-pre-wrap max-h-48 overflow-y-auto">
+                {{ serviceErrorModal.message }}
+              </div>
+              <p class="text-xs text-slate-500 leading-relaxed">
+                Please resolve the container or port conflict, or update your port in the Configuration Center to proceed.
+              </p>
+            </div>
+
+            <!-- Footer -->
+            <div class="flex items-center justify-end px-5 py-3 bg-slate-50 border-t border-slate-100">
+              <button
+                @click="serviceErrorModal.isOpen = false"
+                class="px-4 py-1.5 text-xs font-semibold text-white bg-slate-800 hover:bg-slate-900 rounded transition-colors shadow-sm cursor-pointer"
+              >
+                Understood
+              </button>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
@@ -1880,44 +1949,73 @@ function openEndpoint(url) {
 }
 
 const isOperatingService = ref(false)
+const serviceErrorModal = ref({
+  isOpen: false,
+  title: '',
+  message: '',
+  hint: ''
+})
+
+function showErrorDialog(title, message, hint = '') {
+  serviceErrorModal.value = {
+    isOpen: true,
+    title,
+    message,
+    hint
+  }
+}
 
 async function toggleService(service) {
+  if (service.status === 'Starting' || service.status === 'Stopping') {
+    return
+  }
+
   isOperatingService.value = true
-  try {
-    if (service.status === 'Running') {
+  const prevStatus = service.status
+
+  if (prevStatus === 'Running') {
+    service.status = 'Stopping'
+    try {
       if (typeof StopService === 'function') {
         const res = await StopService(service.name)
-        if (res) {
-          service.status = res.status || 'Stopped'
-        } else {
-          service.status = 'Stopped'
-        }
+        service.status = res?.status || 'Stopped'
       } else {
         service.status = 'Stopped'
       }
-    } else {
+    } catch (err) {
+      console.error('Failed to stop service:', err)
+      service.status = prevStatus
+      showErrorDialog('Stop Service Failed', err?.message || 'Unknown error occurred while stopping the service container.')
+    } finally {
+      isOperatingService.value = false
+    }
+  } else {
+    // Starting the service: immediately transition card state to Starting
+    service.status = 'Starting'
+    try {
       if (typeof StartService === 'function') {
         const res = await StartService(service.name)
-        if (res) {
-          service.status = res.status || 'Running'
+        if (res && res.status === 'Running') {
+          service.status = 'Running'
           if (res.containerId) {
             service.containerName = res.config?.containerName || service.containerName
           }
         } else {
-          service.status = 'Running'
+          throw new Error('Service did not reach running state in Docker')
         }
       } else {
-        service.status = 'Running'
+        throw new Error('StartService backend binding not available')
       }
       if (typeof notRunningNotice !== 'undefined' && notRunningNotice.value && notRunningNotice.value[service.name]) {
         notRunningNotice.value[service.name] = false
       }
+    } catch (err) {
+      console.error('Failed to start service:', err)
+      service.status = 'Stopped'
+      showErrorDialog('Failed to Start ' + service.name, err?.message || 'Error occurred starting Docker container')
+    } finally {
+      isOperatingService.value = false
     }
-  } catch (err) {
-    console.error('Failed to toggle service:', err)
-    alert(err?.message || 'Error updating service')
-  } finally {
-    isOperatingService.value = false
   }
 }
 
@@ -1939,10 +2037,12 @@ function handleDetailsClick(service) {
   openDetails(service)
 }
 
-function startAndOpenDetails(service) {
-  service.status = 'Running'
+async function startAndOpenDetails(service) {
   showNotRunningModal.value = false
-  openDetails(service)
+  await toggleService(service)
+  if (service.status === 'Running') {
+    openDetails(service)
+  }
 }
 
 function openDetails(service) {

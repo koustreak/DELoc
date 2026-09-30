@@ -208,13 +208,61 @@ func (s *Service) IsServiceConfigured(serviceName string) (bool, error) {
 	return s.store.IsServiceConfigured(name)
 }
 
-// GetServiceState returns the persisted state of a service from bbolt.
+// isContainerRunning checks if a Docker container is genuinely running using docker inspect.
+func isContainerRunning(containerNameOrID string) bool {
+	clean := strings.TrimSpace(containerNameOrID)
+	if clean == "" {
+		return false
+	}
+	cmd := exec.Command("docker", "inspect", "--format", "{{.State.Running}}", clean)
+	out, err := cmd.Output()
+	if err != nil {
+		return false
+	}
+	return strings.TrimSpace(string(out)) == "true"
+}
+
+// GetServiceState returns the persisted state of a service from bbolt, reconciled with live Docker state.
 func (s *Service) GetServiceState(serviceName string) (*states.ServiceState, error) {
 	if s.store == nil {
 		return nil, fmt.Errorf("persistent store not initialized")
 	}
 	name := strings.ToLower(strings.TrimSpace(serviceName))
-	return s.store.GetServiceState(name)
+	state, err := s.store.GetServiceState(name)
+	if err != nil || state == nil {
+		return nil, err
+	}
+
+	// Reconcile with live Docker status
+	if state.Configured {
+		containerName := ""
+		if state.Config != nil {
+			if c, ok := state.Config["containerName"].(string); ok && c != "" {
+				containerName = c
+			}
+		}
+		if containerName == "" && state.ContainerID != "" {
+			containerName = state.ContainerID
+		}
+		if containerName == "" {
+			currentUser := "user"
+			if u, err := user.Current(); err == nil && u.Username != "" {
+				currentUser = u.Username
+			}
+			containerName = fmt.Sprintf("deloc-%s-%s", name, currentUser)
+		}
+
+		running := isContainerRunning(containerName)
+		if running && state.Status != "Running" {
+			state.Status = "Running"
+			_ = s.store.SaveServiceState(name, state)
+		} else if !running && state.Status == "Running" {
+			state.Status = "Stopped"
+			_ = s.store.SaveServiceState(name, state)
+		}
+	}
+
+	return state, nil
 }
 
 // ServiceRuntimeConfig defines the runtime container options for a service.
@@ -399,7 +447,7 @@ func (s *Service) StartService(serviceName string) (*states.ServiceState, error)
 	name := strings.ToLower(strings.TrimSpace(serviceName))
 	state, err := s.store.GetServiceState(name)
 	if err != nil || state == nil || !state.Configured {
-		return nil, fmt.Errorf("service %s is not configured", serviceName)
+		return nil, fmt.Errorf("service '%s' is not configured yet. Please configure it first.", serviceName)
 	}
 
 	containerName := ""
@@ -420,7 +468,28 @@ func (s *Service) StartService(serviceName string) (*states.ServiceState, error)
 		containerName = fmt.Sprintf("deloc-%s-%s", name, currentUser)
 	}
 
-	// Check if container already exists
+	// 1. If container is already running, return immediately
+	if isContainerRunning(containerName) {
+		state.Status = "Running"
+		_ = s.store.SaveServiceState(name, state)
+		return state, nil
+	}
+
+	port := state.Port
+	if port == 0 {
+		port = 5432
+	}
+
+	// 2. Check if host port is already allocated by another container
+	conflictCmd := exec.Command("docker", "ps", "--filter", fmt.Sprintf("publish=%d", port), "--format", "{{.Names}}")
+	if conflictOut, err := conflictCmd.Output(); err == nil {
+		conflictNames := strings.TrimSpace(string(conflictOut))
+		if conflictNames != "" && conflictNames != containerName {
+			return nil, fmt.Errorf("Port %d is already in use by container '%s'. Please stop that container or update default_port in Configuration Center.", port, conflictNames)
+		}
+	}
+
+	// 3. Check if container already exists
 	checkCmd := exec.Command("docker", "ps", "-a", "--filter", fmt.Sprintf("name=^/%s$", containerName), "--format", "{{.ID}}")
 	existingOut, _ := checkCmd.Output()
 	existingID := strings.TrimSpace(string(existingOut))
@@ -428,21 +497,18 @@ func (s *Service) StartService(serviceName string) (*states.ServiceState, error)
 	if existingID != "" {
 		// Existing container found: start it
 		startCmd := exec.Command("docker", "start", containerName)
-		if startOut, err := startCmd.CombinedOutput(); err != nil {
-			return nil, fmt.Errorf("failed to start existing container %s: %s (%w)", containerName, string(startOut), err)
+		startOut, startErr := startCmd.CombinedOutput()
+		if startErr != nil {
+			return nil, fmt.Errorf("Docker start error for %s: %s", containerName, strings.TrimSpace(string(startOut)))
 		}
 		state.ContainerID = existingID
 	} else {
 		// New container: ensure data directory exists on host
 		hostDataDir := expandHomePath(state.DataDir)
 		if err := os.MkdirAll(hostDataDir, 0755); err != nil {
-			return nil, fmt.Errorf("failed to create data directory %s: %w", hostDataDir, err)
+			return nil, fmt.Errorf("failed to create host data directory %s: %w", hostDataDir, err)
 		}
 
-		port := state.Port
-		if port == 0 {
-			port = 5432
-		}
 		db := state.Database
 		if db == "" {
 			db = "deloc_db"
@@ -466,11 +532,33 @@ func (s *Service) StartService(serviceName string) (*states.ServiceState, error)
 		runCmd := exec.Command("docker", args...)
 		runOut, err := runCmd.CombinedOutput()
 		if err != nil {
-			return nil, fmt.Errorf("failed to run container %s: %s (%w)", containerName, string(runOut), err)
+			return nil, fmt.Errorf("Docker run error for %s: %s", containerName, strings.TrimSpace(string(runOut)))
 		}
 		state.ContainerID = strings.TrimSpace(string(runOut))
 	}
 
+	// 4. Verify that the container is genuinely running (poll up to 3 seconds)
+	started := false
+	for i := 0; i < 15; i++ {
+		time.Sleep(200 * time.Millisecond)
+		if isContainerRunning(containerName) {
+			started = true
+			break
+		}
+	}
+
+	if !started {
+		// Container did not start or crashed immediately; grab tail of logs
+		logsCmd := exec.Command("docker", "logs", "--tail", "15", containerName)
+		logsOut, _ := logsCmd.CombinedOutput()
+		logsMsg := strings.TrimSpace(string(logsOut))
+		if logsMsg != "" {
+			return nil, fmt.Errorf("Container %s exited immediately. Logs: %s", containerName, logsMsg)
+		}
+		return nil, fmt.Errorf("Container %s failed to enter running state within 3 seconds", containerName)
+	}
+
+	// 5. Container verified running: update bbolt
 	state.Status = "Running"
 	state.StartedAt = time.Now().Unix()
 	if err := s.store.SaveServiceState(name, state); err != nil {
@@ -504,6 +592,14 @@ func (s *Service) StopService(serviceName string) (*states.ServiceState, error) 
 
 	stopCmd := exec.Command("docker", "stop", containerTarget)
 	_ = stopCmd.Run()
+
+	// Wait up to 3 seconds for container to stop
+	for i := 0; i < 15; i++ {
+		if !isContainerRunning(containerTarget) {
+			break
+		}
+		time.Sleep(200 * time.Millisecond)
+	}
 
 	state.Status = "Stopped"
 	if err := s.store.SaveServiceState(name, state); err != nil {

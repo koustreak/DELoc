@@ -36,7 +36,7 @@
             >
               <div class="flex items-center gap-2">
                 <FileCode class="w-4 h-4 text-blue-500 group-hover:scale-110 transition-transform" />
-                <span>Manage JSON Configs</span>
+                <span>Configuration Center</span>
               </div>
               <ChevronRight class="w-3.5 h-3.5 text-slate-400 group-hover:text-blue-500 transition-colors" />
             </button>
@@ -48,9 +48,6 @@
             <div class="flex flex-col gap-1.5">
               <label class="text-[11px] text-slate-600 font-medium">Archive Target Path</label>
               <input type="text" value="/home/DELoc/archives" class="w-full bg-slate-50 border border-slate-200 rounded px-2.5 py-1.5 text-xs font-mono text-slate-600 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" />
-              
-              <label class="text-[11px] text-slate-600 font-medium mt-1">HTTP Proxy</label>
-              <input type="text" placeholder="http://proxy.corp.com:8080" class="w-full bg-slate-50 border border-slate-200 rounded px-2.5 py-1.5 text-xs font-mono text-slate-600 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" />
             </div>
           </div>
 
@@ -70,7 +67,17 @@
                 <span class="text-[11px] text-slate-500 font-medium flex items-center gap-1.5">
                   <User class="w-3.5 h-3.5 text-blue-500" /> Developer
                 </span>
-                <span class="text-[11px] font-medium text-slate-700">Koushik (Bhootnath)</span>
+                <a
+                  href="https://www.linkedin.com/in/koushik-dutta-9797a8209/"
+                  @click.prevent="openUrl('https://www.linkedin.com/in/koushik-dutta-9797a8209/')"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="text-[11px] font-medium text-blue-600 hover:text-blue-700 hover:underline flex items-center gap-1 cursor-pointer transition-colors"
+                  title="Open LinkedIn Profile"
+                >
+                  <span>Koushik (Bhootnath)</span>
+                  <ExternalLink class="w-3 h-3 opacity-60" />
+                </a>
               </div>
 
               <div class="flex items-center justify-between py-1.5 px-2.5 rounded bg-white border border-slate-200/80 shadow-xs">
@@ -151,7 +158,8 @@ import {
   User,
   Mail,
   Copy,
-  Check
+  Check,
+  ExternalLink
 } from 'lucide-vue-next'
 import ConfigEditorModal from './ConfigEditorModal.vue'
 import {
@@ -161,7 +169,8 @@ import {
   WindowFullscreen,
   WindowUnfullscreen,
   WindowIsFullscreen,
-  Quit
+  Quit,
+  BrowserOpenURL
 } from '../../wailsjs/runtime/runtime.js'
 
 const isMaximized = ref(false)
@@ -170,6 +179,18 @@ const showSettingsMenu = ref(false)
 const showConfigEditor = ref(false)
 const currentTheme = ref('light')
 const emailCopied = ref(false)
+
+function openUrl(url) {
+  try {
+    if (typeof BrowserOpenURL === 'function') {
+      BrowserOpenURL(url)
+      return
+    }
+  } catch (e) {
+    // ignore
+  }
+  window.open(url, '_blank')
+}
 
 function copyEmail() {
   if (navigator?.clipboard?.writeText) {
@@ -322,3 +343,4 @@ onMounted(() => {
   color: #ff8c00;
 }
 </style>
+
