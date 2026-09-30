@@ -154,13 +154,14 @@
 </template>
 
 <script setup>
-import { ref, watch, computed } from 'vue'
+import { ref, watch, computed, onMounted } from 'vue'
 import {
   FileCode, FileJson, X, Check, AlertCircle, Save, Code2, RotateCcw
 } from 'lucide-vue-next'
 import {
   GetConfigFile, SaveConfigFile, ListConfigFiles
 } from '../../wailsjs/go/bindings/Service.js'
+import { EventsOn } from '../../wailsjs/runtime/runtime.js'
 
 const props = defineProps({
   isOpen: {
@@ -199,6 +200,16 @@ watch(() => props.isOpen, async (opened) => {
   if (opened) {
     await fetchFilesList()
     await loadFile(selectedFile.value)
+  }
+})
+
+onMounted(() => {
+  if (typeof EventsOn === 'function') {
+    EventsOn('settings:updated', async () => {
+      if (props.isOpen && selectedFile.value === 'services.json') {
+        await loadFile('services.json')
+      }
+    })
   }
 })
 

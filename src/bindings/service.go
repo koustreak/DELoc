@@ -42,6 +42,11 @@ func NewService(store *states.Store) *Service {
 // Startup is called when the app starts.
 func (s *Service) Startup(ctx context.Context) {
 	s.ctx = ctx
+	if s.store != nil {
+		if appSettings, err := s.store.GetAppSettings(); err == nil && appSettings != nil {
+			_ = syncRootVolumePathToConfigs(appSettings.RootVolumePath)
+		}
+	}
 }
 
 type dockerHubTagItem struct {
@@ -713,10 +718,108 @@ func (s *Service) GetAppSettings() (*states.AppSettings, error) {
 	return s.store.GetAppSettings()
 }
 
-// SaveAppSettings updates and stores global application settings in bbolt.
+// syncRootVolumePathToConfigs scans config JSON files and updates default_data_dir
+// so that all services dynamically reflect the configured root volume path: <rootVolumePath>/<serviceName>
+func syncRootVolumePathToConfigs(rootVolumePath string) error {
+	cleanRoot := strings.TrimSpace(rootVolumePath)
+	if cleanRoot == "" {
+		cleanRoot = "~/.deloc/data"
+	}
+
+	configDirs := []string{"config"}
+	if home, err := os.UserHomeDir(); err == nil {
+		configDirs = append(configDirs, filepath.Join(home, ".deloc", "config"))
+	}
+
+	for _, dir := range configDirs {
+		entries, err := os.ReadDir(dir)
+		if err != nil {
+			continue
+		}
+
+		for _, entry := range entries {
+			if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".json") {
+				continue
+			}
+
+			filePath := filepath.Join(dir, entry.Name())
+			data, err := os.ReadFile(filePath)
+			if err != nil || len(data) == 0 {
+				continue
+			}
+
+			var rootMap map[string]any
+			if err := json.Unmarshal(data, &rootMap); err != nil {
+				continue
+			}
+
+			changed := false
+			for svcKey, svcVal := range rootMap {
+				svcMap, ok := svcVal.(map[string]any)
+				if !ok {
+					continue
+				}
+				runtimeMap, ok := svcMap["runtime"].(map[string]any)
+				if !ok {
+					continue
+				}
+
+				if currentDir, exists := runtimeMap["default_data_dir"]; exists {
+					subFolder := svcKey
+					if currentStr, ok := currentDir.(string); ok && currentStr != "" {
+						base := filepath.Base(currentStr)
+						if base != "" && base != "." && base != "/" {
+							subFolder = base
+						}
+					}
+
+					newDir := filepath.ToSlash(filepath.Join(cleanRoot, subFolder))
+					if currentStr, ok := currentDir.(string); !ok || currentStr != newDir {
+						runtimeMap["default_data_dir"] = newDir
+						changed = true
+					}
+				}
+			}
+
+			if changed {
+				prettyJSON, err := json.MarshalIndent(rootMap, "", "  ")
+				if err == nil {
+					_ = os.WriteFile(filePath, append(prettyJSON, '\n'), 0644)
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+// SaveAppSettings updates and stores global application settings in bbolt and syncs to config files.
 func (s *Service) SaveAppSettings(settings states.AppSettings) error {
 	if s.store == nil {
 		return fmt.Errorf("persistent store not initialized")
 	}
-	return s.store.SaveAppSettings(&settings)
+	if err := s.store.SaveAppSettings(&settings); err != nil {
+		return err
+	}
+
+	// Update service JSON config files so default_data_dir reflects the root volume path
+	_ = syncRootVolumePathToConfigs(settings.RootVolumePath)
+
+	// Sync unstarted/auto services dataDir in bbolt
+	cleanRoot := strings.TrimSpace(settings.RootVolumePath)
+	if cleanRoot == "" {
+		cleanRoot = "~/.deloc/data"
+	}
+	if state, err := s.store.GetServiceState("postgresql"); err == nil && state != nil {
+		if state.Status != "Running" {
+			state.DataDir = filepath.Join(cleanRoot, "postgres")
+			_ = s.store.SaveServiceState("postgresql", state)
+		}
+	}
+
+	if s.ctx != nil {
+		wailsRuntime.EventsEmit(s.ctx, "settings:updated", settings)
+	}
+
+	return nil
 }

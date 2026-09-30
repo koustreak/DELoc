@@ -1444,9 +1444,10 @@ import {
   AutoConfigureService,
   SaveServiceState,
   StartService,
-  StopService
+  StopService,
+  GetAppSettings
 } from '../../wailsjs/go/bindings/Service.js'
-import { BrowserOpenURL, ClipboardSetText } from '../../wailsjs/runtime/runtime.js'
+import { BrowserOpenURL, ClipboardSetText, EventsOn } from '../../wailsjs/runtime/runtime.js'
 
 const searchQuery = ref('')
 const copiedKey = ref(null)
@@ -1566,8 +1567,39 @@ async function checkServicesState() {
   }
 }
 
+const rootVolumeDir = ref('~/.deloc/data')
+
+async function syncRootVolumeSettings() {
+  try {
+    if (typeof GetAppSettings === 'function') {
+      const res = await GetAppSettings()
+      if (res && res.rootVolumePath) {
+        rootVolumeDir.value = res.rootVolumePath
+        if (serviceConfigs.value.HDFS?.mounts) {
+          serviceConfigs.value.HDFS.mounts.nameNodeHostPath = `${res.rootVolumePath}/hdfs/namenode`
+          serviceConfigs.value.HDFS.mounts.dataNodeHostPath = `${res.rootVolumePath}/hdfs/datanode`
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('Failed to sync root volume settings:', err)
+  }
+}
+
 onMounted(async () => {
+  await syncRootVolumeSettings()
   await checkServicesState()
+  if (typeof EventsOn === 'function') {
+    EventsOn('settings:updated', (res) => {
+      if (res && res.rootVolumePath) {
+        rootVolumeDir.value = res.rootVolumePath
+        if (serviceConfigs.value.HDFS?.mounts) {
+          serviceConfigs.value.HDFS.mounts.nameNodeHostPath = `${res.rootVolumePath}/hdfs/namenode`
+          serviceConfigs.value.HDFS.mounts.dataNodeHostPath = `${res.rootVolumePath}/hdfs/datanode`
+        }
+      }
+    })
+  }
 })
 
 async function handleAutoConfigure(service) {
@@ -1904,7 +1936,7 @@ async function applyConfig() {
           port: 5432,
           database: serviceConfigs.value.PostgreSQL?.dbName || 'deloc_db',
           user: 'postgres',
-          dataDir: '~/.deloc/data/postgres',
+          dataDir: `${rootVolumeDir.value}/${(selectedService.value.name || 'postgres').toLowerCase()}`,
           config: {
             image: configForm.value.fullImage || 'postgres:17-alpine',
             containerName: selectedService.value.containerName || 'deloc-postgres',
