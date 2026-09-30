@@ -617,6 +617,63 @@ func (s *Service) StopService(serviceName string) (*states.ServiceState, error) 
 	return state, nil
 }
 
+// DisableService stops and removes the container for a service, optionally deletes the Docker image,
+// and resets the service's state in bbolt to unconfigured.
+func (s *Service) DisableService(serviceName string, deleteImage bool) (*states.ServiceState, error) {
+	if s.store == nil {
+		return nil, fmt.Errorf("persistent store not initialized")
+	}
+
+	name := strings.ToLower(strings.TrimSpace(serviceName))
+	state, _ := s.store.GetServiceState(name)
+
+	containerName := ""
+	image := "postgres:17-alpine"
+	if state != nil && state.Config != nil {
+		if c, ok := state.Config["containerName"].(string); ok && c != "" {
+			containerName = c
+		}
+		if img, ok := state.Config["image"].(string); ok && img != "" {
+			image = img
+		}
+	}
+	if containerName == "" {
+		currentUser := "user"
+		if u, err := user.Current(); err == nil && u.Username != "" {
+			currentUser = u.Username
+		}
+		containerName = fmt.Sprintf("deloc-%s-%s", name, currentUser)
+	}
+
+	// 1. Stop container if running
+	_ = exec.Command("docker", "stop", "-t", "5", containerName).Run()
+	_ = exec.Command("docker", "stop", "-t", "5", fmt.Sprintf("deloc-%s", name)).Run()
+
+	// 2. Remove container
+	_ = exec.Command("docker", "rm", "-f", containerName).Run()
+	_ = exec.Command("docker", "rm", "-f", fmt.Sprintf("deloc-%s", name)).Run()
+
+	// 3. Delete Docker image if requested
+	if deleteImage && image != "" {
+		_ = exec.Command("docker", "rmi", "-f", image).Run()
+	}
+
+	// 4. Reset state in bbolt
+	newState := states.ServiceState{
+		Configured: false,
+		Status:     "Unconfigured",
+	}
+	if err := s.store.SaveServiceState(name, &newState); err != nil {
+		return nil, fmt.Errorf("failed to reset service state in store: %w", err)
+	}
+
+	if s.ctx != nil {
+		wailsRuntime.EventsEmit(s.ctx, "service:disabled", name)
+	}
+
+	return &newState, nil
+}
+
 // GetServiceDefinition returns the definition from config/services.json for a given service.
 func (s *Service) GetServiceDefinition(serviceName string) (*ServiceConfigDef, error) {
 	return loadServiceConfigDef(serviceName)

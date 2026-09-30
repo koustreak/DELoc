@@ -74,102 +74,16 @@
                   ></span>
                   <span>{{ service.status }}</span>
                 </span>
-
-                <!-- Details Action Button -->
-                <button
-                  @click.stop="handleDetailsClick(service)"
-                  title="Click for details"
-                  class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 hover:text-slate-800 transition-all cursor-pointer select-none shadow-xs"
-                >
-                  Details
-                </button>
               </template>
             </div>
           </div>
 
           <!-- Description -->
-          <div class="text-xs text-slate-600 mb-3 leading-normal line-clamp-2 h-8">{{ service.description }}</div>
-
-          <!-- Unconfigured Prompt Box -->
-          <div
-            v-if="!service.isConfigured"
-            class="mb-4 rounded-md border border-dashed border-amber-300/80 bg-amber-50/40 p-3.5 flex flex-col items-center justify-center text-center gap-1.5 shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
-          >
-            <div class="flex items-center gap-1.5 text-xs font-bold text-amber-800">
-              <CircleAlert class="w-4 h-4 text-amber-600 shrink-0" />
-              Service Not Configured
-            </div>
-            <p class="text-[11px] text-slate-500 leading-relaxed max-w-[280px]">
-              PostgreSQL is not yet initialized in DELoc. Use fast auto-configuration or customize your own settings.
-            </p>
-          </div>
-
-          <!-- Endpoints & Ports Section (Configured) -->
-          <div
-            v-else
-            class="mb-4 rounded-md border border-slate-200/90 bg-white/90 p-2 shadow-[0_1px_2px_rgba(0,0,0,0.03)] flex flex-col gap-1.5"
-          >
-            <div class="flex items-center justify-between text-[10px] font-bold tracking-wider uppercase text-slate-400 px-0.5">
-              <span>Endpoints &amp; Ports</span>
-              <span class="text-[9px] font-mono text-slate-400 font-normal">
-                {{ service.endpoints?.length || 0 }} {{ (service.endpoints?.length === 1) ? 'port' : 'ports' }}
-              </span>
-            </div>
-
-            <div class="space-y-1">
-              <div
-                v-for="(ep, idx) in service.endpoints"
-                :key="idx"
-                class="flex items-center justify-between gap-1.5 px-2 py-1 rounded bg-slate-50 hover:bg-slate-100/90 border border-slate-200/60 text-xs transition-colors"
-              >
-                <!-- Left: Protocol tag + Name -->
-                <div class="flex items-center gap-1.5 min-w-0 flex-1">
-                  <span
-                    :class="[
-                      'text-[9px] font-bold uppercase px-1 py-0.5 rounded leading-none tracking-wider font-mono',
-                      ep.type === 'http' ? 'bg-blue-100 text-blue-700 border border-blue-200/50' : 'bg-purple-100 text-purple-700 border border-purple-200/50'
-                    ]"
-                  >
-                    {{ ep.type }}
-                  </span>
-                  <span class="text-[11px] font-medium text-slate-700 truncate" :title="ep.label">
-                    {{ ep.label }}
-                  </span>
-                </div>
-
-                <!-- Right: Port/Host + Actions -->
-                <div class="flex items-center gap-1 flex-shrink-0">
-                  <span class="font-mono text-[10px] text-slate-500 font-medium">
-                    :{{ ep.port }}
-                  </span>
-
-                  <!-- Open in browser for HTTP endpoints -->
-                  <button
-                    v-if="ep.type === 'http'"
-                    @click="openEndpoint(ep.url)"
-                    class="p-1 rounded hover:bg-blue-100 text-slate-400 hover:text-blue-600 transition-colors"
-                    :title="'Open ' + ep.url + ' in browser'"
-                  >
-                    <ExternalLink class="w-3 h-3" />
-                  </button>
-
-                  <!-- Copy button -->
-                  <button
-                    @click="copyEndpoint(ep.url, service.name + '-' + idx)"
-                    class="p-1 rounded hover:bg-slate-200 text-slate-400 hover:text-slate-700 transition-colors"
-                    :title="'Copy ' + ep.url"
-                  >
-                    <Check v-if="copiedKey === (service.name + '-' + idx)" class="w-3 h-3 text-emerald-600" />
-                    <Copy v-else class="w-3 h-3" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
+          <div class="text-xs text-slate-600 mb-4 leading-relaxed flex-1">{{ service.description }}</div>
 
           <!-- Action Buttons -->
           <!-- Unconfigured State: Auto vs Manual Configure -->
-          <div v-if="!service.isConfigured" class="flex items-center gap-2 mt-auto">
+          <div v-if="!service.isConfigured" class="flex items-center gap-2 mt-auto pt-3 border-t border-slate-100">
             <button
               @click="handleAutoConfigure(service)"
               :disabled="isConfiguring"
@@ -191,13 +105,14 @@
             </button>
           </div>
 
-          <!-- Configured State: Start/Stop & Reconfigure -->
-          <div v-else class="flex items-center gap-2 mt-auto">
+          <!-- Configured State: Start/Stop, Service Console, & Disable Service -->
+          <div v-else class="flex items-center gap-2 mt-auto pt-3 border-t border-slate-100">
+            <!-- Start / Stop Button -->
             <button
               @click="toggleService(service)"
               :disabled="service.status === 'Starting' || service.status === 'Stopping'"
               :class="[
-                'flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded text-[11px] font-semibold transition-all active:scale-95 shadow-sm cursor-pointer disabled:opacity-75 disabled:cursor-not-allowed',
+                'flex-1 flex items-center justify-center gap-1.5 py-2 px-2 rounded text-[11px] font-semibold transition-all shadow-sm cursor-pointer disabled:opacity-75 disabled:cursor-not-allowed',
                 service.status === 'Running'
                   ? 'bg-rose-600 hover:bg-rose-700 text-white shadow-rose-900/20'
                   : service.status === 'Starting'
@@ -214,18 +129,26 @@
                 {{ service.status === 'Starting' ? 'Starting...' : service.status === 'Stopping' ? 'Stopping...' : service.status === 'Running' ? 'Stop' : 'Start' }}
               </span>
             </button>
+
+            <!-- Service Console Button -->
             <button
-              @click="openConfig(service)"
-              :disabled="service.configType === 'auto' || service.status === 'Starting' || service.status === 'Stopping'"
-              :title="service.configType === 'auto' ? 'Reconfiguration is disabled because this service was auto-configured from services.json' : 'Reconfigure service parameters'"
-              :class="[
-                'flex-1 py-1.5 rounded text-[11px] font-semibold shadow-sm transition-all border',
-                service.configType === 'auto' || service.status === 'Starting' || service.status === 'Stopping'
-                  ? 'bg-slate-50 border-slate-200 text-slate-400 cursor-not-allowed opacity-60'
-                  : 'bg-slate-100 hover:bg-slate-200 active:bg-slate-300 border-slate-300/80 text-slate-700 cursor-pointer active:scale-95'
-              ]"
+              @click="handleDetailsClick(service)"
+              class="flex-1 flex items-center justify-center gap-1.5 py-2 px-2 rounded text-[11px] font-semibold bg-slate-800 hover:bg-slate-900 active:bg-black text-white shadow-sm transition-all cursor-pointer"
+              title="Open Service Console for telemetry, connection parameters, schemas, and live terminal"
             >
-              Reconfigure
+              <Terminal class="w-3 h-3 text-slate-300" />
+              <span>Service Console</span>
+            </button>
+
+            <!-- Disable Service Button -->
+            <button
+              @click="openDisableModal(service)"
+              :disabled="service.status === 'Starting' || service.status === 'Stopping'"
+              class="px-2.5 py-2 rounded text-[11px] font-semibold bg-white hover:bg-rose-50 active:bg-rose-100 border border-slate-200 hover:border-rose-300 text-slate-600 hover:text-rose-700 shadow-xs transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1"
+              title="Disable service and tear down container"
+            >
+              <Trash2 class="w-3 h-3 text-rose-500" />
+              <span>Disable</span>
             </button>
           </div>
         </div>
@@ -1040,7 +963,7 @@
                 <ServiceIcon :name="detailsService.name" class="w-8 h-8 drop-shadow-sm flex-shrink-0" />
                 <div>
                   <div class="flex items-center gap-2">
-                    <h3 class="font-bold text-slate-800 text-base leading-tight">{{ detailsService.name }}</h3>
+                    <h3 class="font-bold text-slate-800 text-base leading-tight">{{ detailsService.name }} Service Console</h3>
                     <span class="text-[10px] font-mono bg-slate-200/80 text-slate-600 px-1.5 py-0.5 rounded font-medium">
                       {{ detailsService.version }}
                     </span>
@@ -1426,13 +1349,99 @@
         </div>
       </Transition>
     </Teleport>
+
+    <!-- ── Disable Service Modal ── -->
+    <Teleport to="body">
+      <Transition name="modal">
+        <div
+          v-if="disableModal.isOpen"
+          class="fixed inset-0 z-[220] flex items-center justify-center bg-black/50 backdrop-blur-[2px] p-4 select-none"
+          @click.self="!disableModal.isLoading && (disableModal.isOpen = false)"
+        >
+          <div class="bg-white rounded-xl shadow-2xl border border-rose-200 w-[440px] max-w-[95vw] flex flex-col overflow-hidden">
+            <!-- Header -->
+            <div class="flex items-center justify-between px-5 py-3.5 border-b border-rose-100 bg-rose-50/70">
+              <div class="flex items-center gap-2.5">
+                <div class="w-6 h-6 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center">
+                  <Trash2 class="w-3.5 h-3.5" />
+                </div>
+                <span class="font-bold text-slate-800 text-sm tracking-tight">Disable {{ disableModal.service?.name }} Service</span>
+              </div>
+              <button
+                v-if="!disableModal.isLoading"
+                @click="disableModal.isOpen = false"
+                class="text-slate-400 hover:text-slate-700 transition-colors p-1 rounded hover:bg-rose-100/60 cursor-pointer"
+              >
+                <X class="w-4 h-4" />
+              </button>
+            </div>
+
+            <!-- Body -->
+            <div class="p-5 flex flex-col gap-3.5">
+              <p class="text-xs text-slate-600 leading-relaxed">
+                Disabling will stop and permanently remove the Docker container
+                <code class="px-1.5 py-0.5 rounded bg-slate-100 font-mono text-slate-800 text-[11px]">{{ disableModal.service?.containerName || 'deloc-postgres' }}</code>.
+              </p>
+
+              <div class="p-3 bg-amber-50/70 border border-amber-200/80 rounded-lg flex items-start gap-2 text-[11px] text-amber-800 leading-normal">
+                <HardDrive class="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                <span>
+                  <strong>Data Preservation:</strong> Your persistent database volume files stored in your Root Volume Path remain completely safe and intact.
+                </span>
+              </div>
+
+              <!-- Delete Image Checkbox -->
+              <label class="flex items-center gap-2.5 p-3 rounded-lg border border-slate-200 bg-slate-50/60 hover:bg-slate-50 cursor-pointer transition-colors">
+                <input
+                  type="checkbox"
+                  v-model="disableModal.deleteImage"
+                  :disabled="disableModal.isLoading"
+                  class="w-4 h-4 rounded text-rose-600 accent-rose-600 cursor-pointer shrink-0"
+                />
+                <div class="flex flex-col">
+                  <span class="text-xs font-semibold text-slate-700">Delete Docker Image</span>
+                  <span class="text-[10.5px] text-slate-500">Remove <code class="font-mono text-slate-600">{{ disableModal.service?.repos?.[0] || 'postgres' }}:{{ disableModal.service?.defaultTag || '17' }}</code> to reclaim disk space</span>
+                </div>
+              </label>
+
+              <!-- Error display if any -->
+              <div v-if="disableModal.error" class="p-2.5 rounded bg-rose-50 border border-rose-200 text-xs text-rose-700 font-mono">
+                {{ disableModal.error }}
+              </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="flex items-center justify-end gap-2 px-5 py-3 bg-slate-50 border-t border-slate-100">
+              <button
+                type="button"
+                @click="disableModal.isOpen = false"
+                :disabled="disableModal.isLoading"
+                class="px-3.5 py-1.5 text-xs font-medium text-slate-600 hover:text-slate-800 hover:bg-slate-200/70 rounded transition-colors cursor-pointer disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                @click="confirmDisableService"
+                :disabled="disableModal.isLoading"
+                class="flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold text-white bg-rose-600 hover:bg-rose-700 active:bg-rose-800 rounded transition-colors shadow-sm cursor-pointer disabled:opacity-75"
+              >
+                <RefreshCw v-if="disableModal.isLoading" class="w-3 h-3 animate-spin" />
+                <Trash2 v-else class="w-3 h-3" />
+                <span>{{ disableModal.isLoading ? 'Tearing down...' : 'Disable & Teardown' }}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import {
-  Search, Layers, Play, Square, X, RefreshCw, ExternalLink, Copy, Check, Terminal, HardDrive, CircleAlert, SlidersHorizontal, Cpu, Folder, FolderOpen, Zap, Database, Key, Eye, EyeOff
+  Search, Layers, Play, Square, X, RefreshCw, ExternalLink, Copy, Check, Terminal, HardDrive, CircleAlert, SlidersHorizontal, Cpu, Folder, FolderOpen, Zap, Database, Key, Eye, EyeOff, Trash2
 } from 'lucide-vue-next'
 import ServiceIcon from './common/ServiceIcon.vue'
 import {
@@ -1445,7 +1454,8 @@ import {
   SaveServiceState,
   StartService,
   StopService,
-  GetAppSettings
+  GetAppSettings,
+  DisableService
 } from '../../wailsjs/go/bindings/Service.js'
 import { BrowserOpenURL, ClipboardSetText, EventsOn } from '../../wailsjs/runtime/runtime.js'
 
@@ -2048,6 +2058,53 @@ async function toggleService(service) {
     } finally {
       isOperatingService.value = false
     }
+  }
+}
+
+// ── Disable Service State & Handlers ──
+const disableModal = ref({
+  isOpen: false,
+  service: null,
+  deleteImage: false,
+  isLoading: false,
+  error: null
+})
+
+function openDisableModal(service) {
+  disableModal.value = {
+    isOpen: true,
+    service: service,
+    deleteImage: false,
+    isLoading: false,
+    error: null
+  }
+}
+
+async function confirmDisableService() {
+  const svc = disableModal.value.service
+  if (!svc) return
+  disableModal.value.isLoading = true
+  disableModal.value.error = null
+
+  try {
+    if (typeof DisableService === 'function') {
+      const state = await DisableService(svc.name, disableModal.value.deleteImage)
+      if (state) {
+        svc.isConfigured = false
+        svc.status = state.status || 'Stopped'
+        svc.containerName = ''
+        svc.containerId = ''
+      }
+    } else {
+      svc.isConfigured = false
+      svc.status = 'Stopped'
+    }
+    disableModal.value.isOpen = false
+  } catch (err) {
+    console.error('Failed to disable service:', err)
+    disableModal.value.error = err?.message || String(err)
+  } finally {
+    disableModal.value.isLoading = false
   }
 }
 
