@@ -79,7 +79,33 @@
           </div>
 
           <!-- Description -->
-          <div class="text-xs text-slate-600 mb-4 leading-relaxed flex-1">{{ service.description }}</div>
+          <div class="text-xs text-slate-600 mb-3 leading-relaxed">{{ service.description }}</div>
+
+          <!-- Metadata & Inspect Link (Configured State) -->
+          <div v-if="service.isConfigured" class="mb-4 flex flex-col gap-1.5 p-2.5 rounded-lg bg-slate-50/80 border border-slate-200/70 text-xs">
+            <div class="flex items-center justify-between text-slate-600">
+              <span class="text-slate-400 font-medium text-[11px]">Docker Image:</span>
+              <span class="font-mono text-slate-800 text-[11px] truncate max-w-[190px]">
+                {{ service.config?.image || (service.repos?.[0] + ':' + service.defaultTag) }}
+              </span>
+            </div>
+            <div class="flex items-center justify-between text-slate-600">
+              <span class="text-slate-400 font-medium text-[11px]">Port(s) Used:</span>
+              <span class="font-mono text-slate-800 text-[11px]">
+                {{ service.endpoints?.map(e => e.port).filter(Boolean).join(', ') || service.port || '5432' }}
+              </span>
+            </div>
+            <div class="pt-1.5 border-t border-slate-200/60 flex items-center justify-end">
+              <button
+                @click.stop="handleDetailsClick(service)"
+                class="inline-flex items-center gap-1 text-[11px] font-semibold text-blue-600 hover:text-blue-700 hover:underline cursor-pointer"
+                title="Inspect configuration, schema, connections, and live terminal"
+              >
+                <span>Click here to inspect</span>
+                <ExternalLink class="w-3 h-3" />
+              </button>
+            </div>
+          </div>
 
           <!-- Action Buttons -->
           <!-- Unconfigured State: Auto vs Manual Configure -->
@@ -105,14 +131,14 @@
             </button>
           </div>
 
-          <!-- Configured State: Start/Stop, Service Console, & Disable Service -->
+          <!-- Configured State: Single Row with Equal Width (Start/Stop, Reconfigure, Disable) -->
           <div v-else class="flex items-center gap-2 mt-auto pt-3 border-t border-slate-100">
             <!-- Start / Stop Button -->
             <button
               @click="toggleService(service)"
               :disabled="service.status === 'Starting' || service.status === 'Stopping'"
               :class="[
-                'flex-1 flex items-center justify-center gap-1.5 py-2 px-2 rounded text-[11px] font-semibold transition-all shadow-sm cursor-pointer disabled:opacity-75 disabled:cursor-not-allowed',
+                'flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded text-[11px] font-semibold transition-all shadow-sm cursor-pointer disabled:opacity-75 disabled:cursor-not-allowed',
                 service.status === 'Running'
                   ? 'bg-rose-600 hover:bg-rose-700 text-white shadow-rose-900/20'
                   : service.status === 'Starting'
@@ -130,21 +156,27 @@
               </span>
             </button>
 
-            <!-- Service Console Button -->
+            <!-- Reconfigure Button (Original auto-config lock restored) -->
             <button
-              @click="handleDetailsClick(service)"
-              class="flex-1 flex items-center justify-center gap-1.5 py-2 px-2 rounded text-[11px] font-semibold bg-slate-800 hover:bg-slate-900 active:bg-black text-white shadow-sm transition-all cursor-pointer"
-              title="Open Service Console for telemetry, connection parameters, schemas, and live terminal"
+              @click="openConfig(service)"
+              :disabled="service.configType === 'auto' || service.status === 'Starting' || service.status === 'Stopping'"
+              :title="service.configType === 'auto' ? 'Reconfiguration is disabled because this service was auto-configured from services.json' : 'Reconfigure service parameters'"
+              :class="[
+                'flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded text-[11px] font-semibold shadow-sm transition-all border',
+                service.configType === 'auto' || service.status === 'Starting' || service.status === 'Stopping'
+                  ? 'bg-slate-50 border-slate-200 text-slate-400 cursor-not-allowed opacity-60'
+                  : 'bg-slate-100 hover:bg-slate-200 active:bg-slate-300 border-slate-300/80 text-slate-700 cursor-pointer active:scale-95'
+              ]"
             >
-              <Terminal class="w-3 h-3 text-slate-300" />
-              <span>Service Console</span>
+              <SlidersHorizontal class="w-3 h-3 text-slate-500" />
+              <span>Reconfigure</span>
             </button>
 
             <!-- Disable Service Button -->
             <button
               @click="openDisableModal(service)"
               :disabled="service.status === 'Starting' || service.status === 'Stopping'"
-              class="px-2.5 py-2 rounded text-[11px] font-semibold bg-white hover:bg-rose-50 active:bg-rose-100 border border-slate-200 hover:border-rose-300 text-slate-600 hover:text-rose-700 shadow-xs transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1"
+              class="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded text-[11px] font-semibold bg-white hover:bg-rose-50 active:bg-rose-100 border border-slate-200 hover:border-rose-200 text-slate-600 hover:text-rose-600 shadow-xs transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               title="Disable service and tear down container"
             >
               <Trash2 class="w-3 h-3 text-rose-500" />
@@ -963,7 +995,7 @@
                 <ServiceIcon :name="detailsService.name" class="w-8 h-8 drop-shadow-sm flex-shrink-0" />
                 <div>
                   <div class="flex items-center gap-2">
-                    <h3 class="font-bold text-slate-800 text-base leading-tight">{{ detailsService.name }} Service Console</h3>
+                    <h3 class="font-bold text-slate-800 text-base leading-tight">{{ detailsService.name }} — Inspect &amp; Connect</h3>
                     <span class="text-[10px] font-mono bg-slate-200/80 text-slate-600 px-1.5 py-0.5 rounded font-medium">
                       {{ detailsService.version }}
                     </span>
