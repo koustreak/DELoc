@@ -45,6 +45,19 @@ type PythonState struct {
 	Packages       []PythonPackage `json:"packages,omitempty"`
 }
 
+// ScalaState represents the configured Scala runtime state.
+type ScalaState struct {
+	Configured     bool   `json:"configured"`
+	ConfigType     string `json:"configType,omitempty"` // "auto" or "manual"
+	Version        string `json:"version"`
+	SbtVersion     string `json:"sbtVersion,omitempty"`
+	InstallDir     string `json:"installDir"`
+	ExecutablePath string `json:"executablePath"`
+	SbtPath        string `json:"sbtPath,omitempty"`
+	TargetSpark    string `json:"targetSpark,omitempty"`
+	ConfiguredAt   int64  `json:"configuredAt,omitempty"`
+}
+
 // ServiceState represents the persisted configuration and runtime state of a service.
 type ServiceState struct {
 	Configured   bool           `json:"configured"`
@@ -281,5 +294,61 @@ func (s *Store) DeletePythonState() error {
 			return nil
 		}
 		return b.Delete([]byte("python"))
+	})
+}
+
+// GetScalaState retrieves the configured Scala runtime state from bbolt.
+func (s *Store) GetScalaState() (*ScalaState, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	var state ScalaState
+	err := s.db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(PluginsBucket))
+		if b == nil {
+			return nil
+		}
+		data := b.Get([]byte("scala"))
+		if data == nil {
+			return nil
+		}
+		return json.Unmarshal(data, &state)
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &state, nil
+}
+
+// SaveScalaState persists the Scala runtime state to bbolt.
+func (s *Store) SaveScalaState(state *ScalaState) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	data, err := json.Marshal(state)
+	if err != nil {
+		return err
+	}
+
+	return s.db.Update(func(tx *bolt.Tx) error {
+		b, err := tx.CreateBucketIfNotExists([]byte(PluginsBucket))
+		if err != nil {
+			return err
+		}
+		return b.Put([]byte("scala"), data)
+	})
+}
+
+// DeleteScalaState removes the Scala runtime state from bbolt.
+func (s *Store) DeleteScalaState() error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	return s.db.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(PluginsBucket))
+		if b == nil {
+			return nil
+		}
+		return b.Delete([]byte("scala"))
 	})
 }

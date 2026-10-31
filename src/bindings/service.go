@@ -876,6 +876,24 @@ func syncRootVolumePathToConfigs(rootVolumePath string) error {
 				}
 			}
 
+			// Also sync scala.json default_install_dir to <cleanRoot>/scala and sbt to <cleanRoot>/scala/sbt
+			if entry.Name() == "scala.json" {
+				if envMap, ok := rootMap["environment"].(map[string]any); ok {
+					targetScalaDir := filepath.ToSlash(filepath.Join(cleanRoot, "scala"))
+					if curDir, ok := envMap["default_install_dir"].(string); !ok || curDir != targetScalaDir {
+						envMap["default_install_dir"] = targetScalaDir
+						changed = true
+					}
+				}
+				if btMap, ok := rootMap["build_tool"].(map[string]any); ok {
+					targetSbtDir := filepath.ToSlash(filepath.Join(cleanRoot, "scala", "sbt"))
+					if curDir, ok := btMap["default_install_dir"].(string); !ok || curDir != targetSbtDir {
+						btMap["default_install_dir"] = targetSbtDir
+						changed = true
+					}
+				}
+			}
+
 			if changed {
 				prettyJSON, err := json.MarshalIndent(rootMap, "", "  ")
 				if err == nil {
@@ -920,6 +938,15 @@ func (s *Service) SaveAppSettings(settings states.AppSettings) error {
 		_ = s.store.SavePythonState(pyState)
 		if s.ctx != nil {
 			wailsRuntime.EventsEmit(s.ctx, "plugins:python:updated", pyState)
+		}
+	}
+
+	// Update auto-configured scala state to match new root volume path
+	if scState, err := s.store.GetScalaState(); err == nil && scState != nil && scState.ConfigType == "auto" {
+		scState.InstallDir = filepath.Join(cleanRoot, "scala")
+		_ = s.store.SaveScalaState(scState)
+		if s.ctx != nil {
+			wailsRuntime.EventsEmit(s.ctx, "plugins:scala:updated", scState)
 		}
 	}
 
