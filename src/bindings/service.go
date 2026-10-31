@@ -376,6 +376,25 @@ func expandHomePath(p string) string {
 	return p
 }
 
+// ensureDockerNetwork verifies that the dedicated DELoc bridge network exists, creating it if missing.
+func ensureDockerNetwork(netName string) error {
+	inspectCmd := exec.Command("docker", "network", "inspect", netName)
+	if err := inspectCmd.Run(); err == nil {
+		return nil
+	}
+
+	createCmd := exec.Command("docker", "network", "create",
+		"--driver", "bridge",
+		"--label", "com.deloc.managed=true",
+		"--label", "com.deloc.description=DELoc dedicated bridge network for inter-service communication",
+		netName,
+	)
+	if out, err := createCmd.CombinedOutput(); err != nil {
+		return fmt.Errorf("failed to create docker network %s: %s (%w)", netName, strings.TrimSpace(string(out)), err)
+	}
+	return nil
+}
+
 // AutoConfigureService automatically applies recommended defaults from config/services.json and marks it configured in bbolt without starting the container.
 func (s *Service) AutoConfigureService(serviceName string) (*states.ServiceState, error) {
 	if s.store == nil {
@@ -504,6 +523,9 @@ func (s *Service) StartService(serviceName string) (*states.ServiceState, error)
 
 	if existingID != "" {
 		// Existing container found: start it
+		_ = ensureDockerNetwork("deloc-net")
+		_ = exec.Command("docker", "network", "connect", "deloc-net", containerName).Run()
+
 		startCmd := exec.Command("docker", "start", containerName)
 		startOut, startErr := startCmd.CombinedOutput()
 		if startErr != nil {
@@ -517,6 +539,9 @@ func (s *Service) StartService(serviceName string) (*states.ServiceState, error)
 			return nil, fmt.Errorf("failed to create host data directory %s: %w", hostDataDir, err)
 		}
 
+		// Ensure DELoc bridge network exists
+		_ = ensureDockerNetwork("deloc-net")
+
 		db := state.Database
 		if db == "" {
 			db = "deloc_db"
@@ -529,6 +554,8 @@ func (s *Service) StartService(serviceName string) (*states.ServiceState, error)
 		args := []string{
 			"run", "-d",
 			"--name", containerName,
+			"--network", "deloc-net",
+			"--network-alias", "deloc-postgres",
 			"-p", fmt.Sprintf("%d:5432", port),
 			"-e", fmt.Sprintf("POSTGRES_DB=%s", db),
 			"-e", fmt.Sprintf("POSTGRES_USER=%s", dbUser),
