@@ -14,6 +14,7 @@ import (
 const (
 	ServicesBucket = "services"
 	SettingsBucket = "settings"
+	PluginsBucket  = "plugins"
 	DBFileName     = "state.db"
 )
 
@@ -21,6 +22,27 @@ const (
 type AppSettings struct {
 	ArchivePath    string `json:"archivePath"`
 	RootVolumePath string `json:"rootVolumePath"`
+}
+
+// PythonPackage represents an installed Python package.
+type PythonPackage struct {
+	Name    string `json:"name"`
+	Version string `json:"version"`
+	IsCore  bool   `json:"isCore"`
+}
+
+// PythonState represents the configured Python runtime state.
+type PythonState struct {
+	Configured     bool            `json:"configured"`
+	ConfigType     string          `json:"configType,omitempty"` // "auto" or "manual"
+	Version        string          `json:"version"`
+	Type           string          `json:"type"`       // "Virtualenv", "System", "Conda", "Custom"
+	TypeLabel      string          `json:"typeLabel"`
+	EnvName        string          `json:"envName"`
+	ExecutablePath string          `json:"executablePath"`
+	EnvPrefix      string          `json:"envPrefix"`
+	ConfiguredAt   int64           `json:"configuredAt,omitempty"`
+	Packages       []PythonPackage `json:"packages,omitempty"`
 }
 
 // ServiceState represents the persisted configuration and runtime state of a service.
@@ -67,7 +89,10 @@ func NewStore() (*Store, error) {
 		if _, err := tx.CreateBucketIfNotExists([]byte(ServicesBucket)); err != nil {
 			return err
 		}
-		_, err := tx.CreateBucketIfNotExists([]byte(SettingsBucket))
+		if _, err := tx.CreateBucketIfNotExists([]byte(SettingsBucket)); err != nil {
+			return err
+		}
+		_, err := tx.CreateBucketIfNotExists([]byte(PluginsBucket))
 		return err
 	})
 	if err != nil {
@@ -200,5 +225,61 @@ func (s *Store) SaveAppSettings(settings *AppSettings) error {
 			return err
 		}
 		return b.Put([]byte("app_settings"), data)
+	})
+}
+
+// GetPythonState retrieves the configured Python runtime state from bbolt.
+func (s *Store) GetPythonState() (*PythonState, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	var state PythonState
+	err := s.db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(PluginsBucket))
+		if b == nil {
+			return nil
+		}
+		data := b.Get([]byte("python"))
+		if data == nil {
+			return nil
+		}
+		return json.Unmarshal(data, &state)
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &state, nil
+}
+
+// SavePythonState persists the Python runtime state to bbolt.
+func (s *Store) SavePythonState(state *PythonState) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	data, err := json.Marshal(state)
+	if err != nil {
+		return err
+	}
+
+	return s.db.Update(func(tx *bolt.Tx) error {
+		b, err := tx.CreateBucketIfNotExists([]byte(PluginsBucket))
+		if err != nil {
+			return err
+		}
+		return b.Put([]byte("python"), data)
+	})
+}
+
+// DeletePythonState removes the Python runtime state from bbolt.
+func (s *Store) DeletePythonState() error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	return s.db.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(PluginsBucket))
+		if b == nil {
+			return nil
+		}
+		return b.Delete([]byte("python"))
 	})
 }

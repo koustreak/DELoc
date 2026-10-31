@@ -1,5 +1,6 @@
 {
   "environment": {
+    "package_manager": "pip",
     "recommended_version": "3.10.12",
     "supported_versions": [
       "3.8",
@@ -8,116 +9,115 @@
       "3.11"
     ],
     "venv_name": "deloc-env",
-    "venv_path": "~/.deloc/python-env",
-    "package_manager": "pip"
+    "venv_path": "~/.deloc/data/python/deloc-env"
   },
   "packages": {
-    "big_data_and_lakehouse": {
-      "pyspark": {
-        "version": "3.5.1",
-        "description": "Apache Spark Python API for distributed batch and stream processing"
+    "analytics_and_visualization": {
+      "matplotlib": {
+        "description": "Comprehensive plotting and figure generation library",
+        "version": "3.8.4"
       },
+      "plotly": {
+        "description": "Interactive browser-based graphing and charting library",
+        "version": "5.22.0"
+      },
+      "seaborn": {
+        "description": "Statistical data visualization built on top of Matplotlib",
+        "version": "0.13.2"
+      }
+    },
+    "big_data_and_lakehouse": {
       "delta-spark": {
-        "version": "3.2.0",
-        "description": "ACID transactions, scalable metadata, and time travel for Apache Spark"
+        "description": "ACID transactions, scalable metadata, and time travel for Apache Spark",
+        "version": "3.2.0"
       },
       "py4j": {
-        "version": "0.10.9.7",
-        "description": "Enables Python programs to dynamically access JVM objects"
+        "description": "Enables Python programs to dynamically access JVM objects",
+        "version": "0.10.9.7"
+      },
+      "pyspark": {
+        "description": "Apache Spark Python API for distributed batch and stream processing",
+        "version": "3.5.1"
       }
     },
     "columnar_and_in_memory": {
       "duckdb": {
-        "version": "1.0.0",
-        "description": "Fast in-process analytical SQL database engine"
-      },
-      "pyarrow": {
-        "version": "16.1.0",
-        "description": "Apache Arrow Python bindings for high-performance columnar in-memory data"
+        "description": "Fast in-process analytical SQL database engine",
+        "version": "1.0.0"
       },
       "polars": {
-        "version": "0.20.31",
-        "description": "Blazingly fast DataFrame library implemented in Rust"
+        "description": "Blazingly fast DataFrame library implemented in Rust",
+        "version": "0.20.31"
+      },
+      "pyarrow": {
+        "description": "Apache Arrow Python bindings for high-performance columnar in-memory data",
+        "version": "16.1.0"
       }
     },
     "data_engineering_and_etl": {
-      "pandas": {
-        "version": "2.2.2",
-        "description": "Foundational data analysis and manipulation library"
-      },
       "numpy": {
-        "version": "1.26.4",
-        "description": "Core scientific and array computation package"
-      }
-    },
-    "database_connectors": {
-      "psycopg2-binary": {
-        "version": "2.9.9",
-        "description": "PostgreSQL database driver for Python"
+        "description": "Core scientific and array computation package",
+        "version": "1.26.4"
       },
-      "sqlalchemy": {
-        "version": "2.0.30",
-        "description": "SQL toolkit and Object Relational Mapper"
-      },
-      "connectorx": {
-        "version": "0.3.3",
-        "description": "Ultra-fast database client for loading tables directly into Arrow and DataFrames"
-      }
-    },
-    "storage_and_filesystem": {
-      "fsspec": {
-        "version": "2024.5.0",
-        "description": "Standardized filesystem interface for local, remote, and object storage"
-      },
-      "s3fs": {
-        "version": "2024.5.0",
-        "description": "Amazon S3 filesystem connector over fsspec"
-      },
-      "fastparquet": {
-        "version": "2024.5.0",
-        "description": "High performance Python reader and writer for Parquet files"
+      "pandas": {
+        "description": "Foundational data analysis and manipulation library",
+        "version": "2.2.2"
       }
     },
     "data_quality_and_validation": {
       "great-expectations": {
-        "version": "0.18.15",
-        "description": "Data validation, profiling, and pipeline documentation"
+        "description": "Data validation, profiling, and pipeline documentation",
+        "version": "0.18.15"
       },
       "pydantic": {
-        "version": "2.7.2",
-        "description": "Data validation and schema parsing using Python type annotations"
+        "description": "Data validation and schema parsing using Python type annotations",
+        "version": "2.7.2"
       }
     },
-    "analytics_and_visualization": {
-      "matplotlib": {
-        "version": "3.8.4",
-        "description": "Comprehensive plotting and figure generation library"
+    "database_connectors": {
+      "connectorx": {
+        "description": "Ultra-fast database client for loading tables directly into Arrow and DataFrames",
+        "version": "0.3.3"
       },
-      "seaborn": {
-        "version": "0.13.2",
-        "description": "Statistical data visualization built on top of Matplotlib"
+      "psycopg2-binary": {
+        "description": "PostgreSQL database driver for Python",
+        "version": "2.9.9"
       },
-      "plotly": {
-        "version": "5.22.0",
-        "description": "Interactive browser-based graphing and charting library"
+      "sqlalchemy": {
+        "description": "SQL toolkit and Object Relational Mapper",
+        "version": "2.0.30"
       }
     },
     "developer_tooling": {
+      "black": {
+        "description": "Uncompromising Python code formatter",
+        "version": "24.4.2"
+      },
       "ipykernel": {
-        "version": "6.29.4",
-        "description": "IPython kernel for Jupyter notebooks and interactive REPLs"
+        "description": "IPython kernel for Jupyter notebooks and interactive REPLs",
+        "version": "6.29.4"
       },
       "jupyterlab": {
-        "version": "4.2.0",
-        "description": "Interactive development environment for notebooks and code"
-      },
-      "black": {
-        "version": "24.4.2",
-        "description": "Uncompromising Python code formatter"
+        "description": "Interactive development environment for notebooks and code",
+        "version": "4.2.0"
       },
       "ruff": {
-        "version": "0.4.4",
-        "description": "Extremely fast Python linter and code formatter written in Rust"
+        "description": "Extremely fast Python linter and code formatter written in Rust",
+        "version": "0.4.4"
+      }
+    },
+    "storage_and_filesystem": {
+      "fastparquet": {
+        "description": "High performance Python reader and writer for Parquet files",
+        "version": "2024.5.0"
+      },
+      "fsspec": {
+        "description": "Standardized filesystem interface for local, remote, and object storage",
+        "version": "2024.5.0"
+      },
+      "s3fs": {
+        "description": "Amazon S3 filesystem connector over fsspec",
+        "version": "2024.5.0"
       }
     }
   }

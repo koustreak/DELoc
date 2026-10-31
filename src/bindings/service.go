@@ -865,6 +865,17 @@ func syncRootVolumePathToConfigs(rootVolumePath string) error {
 				}
 			}
 
+			// Also sync python.json venv_path to <cleanRoot>/python/deloc-env
+			if entry.Name() == "python.json" {
+				if envMap, ok := rootMap["environment"].(map[string]any); ok {
+					targetVenv := filepath.ToSlash(filepath.Join(cleanRoot, "python", "deloc-env"))
+					if curVenv, ok := envMap["venv_path"].(string); !ok || curVenv != targetVenv {
+						envMap["venv_path"] = targetVenv
+						changed = true
+					}
+				}
+			}
+
 			if changed {
 				prettyJSON, err := json.MarshalIndent(rootMap, "", "  ")
 				if err == nil {
@@ -898,6 +909,17 @@ func (s *Service) SaveAppSettings(settings states.AppSettings) error {
 		if state.Status != "Running" {
 			state.DataDir = filepath.Join(cleanRoot, "postgres")
 			_ = s.store.SaveServiceState("postgresql", state)
+		}
+	}
+
+	// Update auto-configured python state to match new root volume path
+	if pyState, err := s.store.GetPythonState(); err == nil && pyState != nil && pyState.ConfigType == "auto" {
+		newVenv := filepath.Join(cleanRoot, "python", "deloc-env")
+		pyState.ExecutablePath = filepath.Join(newVenv, "bin", "python")
+		pyState.EnvPrefix = newVenv
+		_ = s.store.SavePythonState(pyState)
+		if s.ctx != nil {
+			wailsRuntime.EventsEmit(s.ctx, "plugins:python:updated", pyState)
 		}
 	}
 

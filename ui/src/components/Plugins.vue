@@ -119,7 +119,7 @@
           </div>
 
           <p class="text-[11px] text-slate-400 mt-4">
-            Auto-configure creates an isolated virtual environment at <code>~/.deloc/python-env</code> and pre-installs PySpark, Delta Lake, and DuckDB.
+            Auto-configure creates an isolated virtual environment at <code>{{ targetVenvDisplay }}</code> and pre-installs DuckDB, PyArrow, Pandas, and PostgreSQL client connectors.
           </p>
         </div>
 
@@ -196,11 +196,12 @@
 
               <button
                 type="button"
-                @click="resetEnvironment"
-                class="text-slate-400 hover:text-red-600 transition-colors text-[11px] cursor-pointer"
-                title="Unbind current interpreter"
+                @click="openDisableModal"
+                class="text-slate-400 hover:text-rose-600 transition-colors text-[11px] cursor-pointer flex items-center gap-1 font-medium"
+                title="Unbind and disable current Python environment"
               >
-                Unbind
+                <Trash2 class="w-3.5 h-3.5 text-rose-500" />
+                <span>Disable Environment</span>
               </button>
             </div>
           </div>
@@ -357,7 +358,19 @@
               </div>
             </div>
 
-            <div class="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-end">
+            <div v-if="autoError" class="mx-6 mb-3 p-3 rounded-lg bg-rose-50 border border-rose-200 text-xs text-rose-700 font-mono">
+              {{ autoError }}
+            </div>
+
+            <div class="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-2">
+              <button
+                v-if="autoError"
+                type="button"
+                @click="showAutoModal = false"
+                class="px-4 py-1.5 text-xs font-semibold text-slate-700 bg-white border border-slate-300 rounded-lg shadow-sm hover:bg-slate-100 transition-all cursor-pointer"
+              >
+                Close
+              </button>
               <button
                 v-if="autoComplete"
                 type="button"
@@ -366,7 +379,7 @@
               >
                 Done &amp; Open Environment
               </button>
-              <span v-else class="text-xs text-slate-500 font-medium">Please wait...</span>
+              <span v-else-if="!autoError" class="text-xs text-slate-500 font-medium">Please wait...</span>
             </div>
           </div>
         </div>
@@ -651,32 +664,133 @@
         </div>
       </Transition>
     </Teleport>
+
+    <!-- ── Disable Python Environment Modal ── -->
+    <Teleport to="body">
+      <Transition name="modal">
+        <div
+          v-if="disableModal.isOpen"
+          class="fixed inset-0 z-[220] flex items-center justify-center bg-black/50 backdrop-blur-[2px] p-4 select-none"
+          @click.self="!disableModal.isLoading && (disableModal.isOpen = false)"
+        >
+          <div class="bg-white rounded-xl shadow-2xl border border-rose-200 w-[440px] max-w-[95vw] flex flex-col overflow-hidden">
+            <!-- Header -->
+            <div class="flex items-center justify-between px-5 py-3.5 border-b border-rose-100 bg-rose-50/70">
+              <div class="flex items-center gap-2.5">
+                <div class="w-6 h-6 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center">
+                  <Trash2 class="w-3.5 h-3.5" />
+                </div>
+                <span class="font-bold text-slate-800 text-sm tracking-tight">Disable Python Environment</span>
+              </div>
+              <button
+                v-if="!disableModal.isLoading"
+                @click="disableModal.isOpen = false"
+                class="text-slate-400 hover:text-slate-700 transition-colors p-1 rounded hover:bg-rose-100/60 cursor-pointer"
+              >
+                <X class="w-4 h-4" />
+              </button>
+            </div>
+
+            <!-- Body -->
+            <div class="p-5 flex flex-col gap-3.5">
+              <p class="text-xs text-slate-600 leading-relaxed">
+                Disabling will unbind the current Python environment from DELoc and reset its configuration state.
+              </p>
+
+              <!-- Delete Virtualenv Checkbox if it's a managed venv -->
+              <label v-if="pythonEnv.type === 'Virtualenv' && pythonEnv.envPrefix" class="flex items-center gap-2.5 p-3 rounded-lg border border-slate-200 bg-slate-50/60 hover:bg-slate-50 cursor-pointer transition-colors">
+                <input
+                  type="checkbox"
+                  v-model="disableModal.deleteFiles"
+                  :disabled="disableModal.isLoading"
+                  class="w-4 h-4 rounded text-rose-600 accent-rose-600 cursor-pointer shrink-0"
+                />
+                <div class="flex flex-col">
+                  <span class="text-xs font-semibold text-slate-700">Delete Virtual Environment Directory</span>
+                  <span class="text-[10.5px] text-slate-500 font-mono break-all">{{ pythonEnv.envPrefix }}</span>
+                </div>
+              </label>
+
+              <!-- Error display if any -->
+              <div v-if="disableModal.error" class="p-2.5 rounded bg-rose-50 border border-rose-200 text-xs text-rose-700 font-mono">
+                {{ disableModal.error }}
+              </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="flex items-center justify-end gap-2 px-5 py-3 bg-slate-50 border-t border-slate-100">
+              <button
+                type="button"
+                @click="disableModal.isOpen = false"
+                :disabled="disableModal.isLoading"
+                class="px-3.5 py-1.5 text-xs font-medium text-slate-600 hover:text-slate-800 hover:bg-slate-200/70 rounded transition-colors cursor-pointer disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                @click="confirmDisablePython"
+                :disabled="disableModal.isLoading"
+                class="flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold text-white bg-rose-600 hover:bg-rose-700 active:bg-rose-800 rounded transition-colors shadow-sm cursor-pointer disabled:opacity-75"
+              >
+                <RefreshCw v-if="disableModal.isLoading" class="w-3 h-3 animate-spin" />
+                <Trash2 v-else class="w-3 h-3" />
+                <span>{{ disableModal.isLoading ? 'Disabling...' : 'Disable & Unbind' }}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import {
-  Puzzle, Layers, RefreshCw, SlidersHorizontal, Check, Copy, FolderOpen, X, ChevronRight, CircleAlert, CheckCircle2, Search, Plus, Trash2, Sparkles
+  Puzzle, Layers, RefreshCw, SlidersHorizontal, Check, Copy, FolderOpen, X, ChevronRight, CircleAlert, CheckCircle2, Search, Plus, Trash2, Sparkles, Terminal, HardDrive
 } from 'lucide-vue-next'
 import pythonIcon from '../assets/icons/python.svg'
-import { SelectDirectory } from '../../wailsjs/go/bindings/Service.js'
-import { ClipboardSetText } from '../../wailsjs/runtime/runtime.js'
+import {
+  SelectDirectory,
+  GetAppSettings,
+  GetPythonState,
+  AutoConfigurePython,
+  ConfigureManualPython,
+  DisablePython,
+  ScanHostPython,
+  InstallPythonPackage,
+  UninstallPythonPackage
+} from '../../wailsjs/go/bindings/Service.js'
+import { ClipboardSetText, EventsOn } from '../../wailsjs/runtime/runtime.js'
 
 // Master State: Is Python environment active/configured?
-const isConfigured = ref(true)
+const isConfigured = ref(false)
 const isScanning = ref(false)
 const copiedKey = ref(null)
+
+// Root Volume Path for Python environment
+const rootVolumeDir = ref('~/.deloc/data')
+const targetVenvDisplay = computed(() => `${rootVolumeDir.value}/python/deloc-env`)
 
 // Auto-Configure Progress Modal State
 const showAutoModal = ref(false)
 const autoComplete = ref(false)
+const autoError = ref('')
 const autoSteps = ref([
-  { title: 'Locate stable Python 3 runtime', desc: 'Discovered /usr/bin/python3 (Python 3.10.12)', status: 'pending' },
-  { title: 'Create isolated virtual environment', desc: 'Target: ~/.deloc/python-env', status: 'pending' },
-  { title: 'Bootstrap pip & setuptools', desc: 'Upgrading to latest secure packaging toolchain', status: 'pending' },
-  { title: 'Install core Big Data packages', desc: 'pyspark, delta-spark, duckdb, psycopg2-binary', status: 'pending' },
+  { title: 'Locate stable Python 3 runtime on host', desc: 'Checking /usr/bin/python3 and system binaries', status: 'pending' },
+  { title: 'Create isolated virtual environment', desc: 'Target: ~/.deloc/data/python/deloc-env', status: 'pending' },
+  { title: 'Bootstrap pip & packaging toolchain', desc: 'Upgrading pip and setuptools to latest secure release', status: 'pending' },
+  { title: 'Install foundational Big Data packages', desc: 'duckdb, psycopg2-binary, pyarrow, pandas', status: 'pending' },
 ])
+
+// Disable Environment Modal State
+const disableModal = ref({
+  isOpen: false,
+  deleteFiles: false,
+  isLoading: false,
+  error: null
+})
 
 // Manual Modal State
 const showConfigModal = ref(false)
@@ -685,25 +799,16 @@ const venvSubTab = ref('existing') // 'existing' | 'new'
 
 // Active Configured Environment Model
 const pythonEnv = ref({
-  version: 'Python 3.10.12',
-  type: 'Virtualenv',
-  typeLabel: 'venv (deloc-env)',
-  envName: 'deloc-env',
-  executablePath: '/home/koushik/.deloc/python-env/bin/python',
-  envPrefix: '/home/koushik/.deloc/python-env',
+  version: '',
+  type: '',
+  typeLabel: '',
+  envName: '',
+  executablePath: '',
+  envPrefix: '',
 })
 
 // Installed Packages List
-const packages = ref([
-  { name: 'pip', version: '24.0', isCore: true },
-  { name: 'setuptools', version: '69.5.1', isCore: true },
-  { name: 'pyspark', version: '3.5.1', isCore: false },
-  { name: 'delta-spark', version: '3.2.0', isCore: false },
-  { name: 'duckdb', version: '1.0.0', isCore: false },
-  { name: 'pyarrow', version: '16.1.0', isCore: false },
-  { name: 'pandas', version: '2.2.2', isCore: false },
-  { name: 'psycopg2-binary', version: '2.9.9', isCore: false },
-])
+const packages = ref([])
 
 // Package Search / Filter
 const packageQuery = ref('')
@@ -718,50 +823,14 @@ const newPackageName = ref('')
 const isInstalling = ref(false)
 const installFeedback = ref('')
 
-function isPackageInstalled(name) {
-  return packages.value.some(p => p.name.toLowerCase() === name.toLowerCase())
-}
-
-function installPackage(name) {
-  if (isPackageInstalled(name)) return
-  isInstalling.value = true
-  installFeedback.value = ''
-  setTimeout(() => {
-    packages.value.push({
-      name: name,
-      version: 'latest',
-      isCore: false
-    })
-    isInstalling.value = false
-    installFeedback.value = `Package '${name}' installed successfully!`
-    setTimeout(() => {
-      installFeedback.value = ''
-    }, 2500)
-  }, 900)
-}
-
-function handleCustomInstall() {
-  const name = newPackageName.value.trim()
-  if (!name) return
-  installPackage(name)
-  newPackageName.value = ''
-}
-
-function uninstallPackage(name) {
-  packages.value = packages.value.filter(p => p.name !== name)
-}
-
 // Detected System Interpreters
-const detectedSystemInterpreters = ref([
-  { name: 'Python 3.10 (Host System)', path: '/usr/bin/python3', version: '3.10.12' },
-  { name: 'Python 3.10 (Direct binary)', path: '/usr/bin/python3.10', version: '3.10.12' },
-])
+const detectedSystemInterpreters = ref([])
 
 // Manual Form State
 const form = ref({
   selectedPath: '/usr/bin/python3',
   existingVenvPath: '',
-  newVenvLocation: '/home/koushik/.deloc/venvs/deloc-py310',
+  newVenvLocation: '',
   newVenvBasePython: '/usr/bin/python3',
   condaPath: '',
   customPath: '',
@@ -779,58 +848,134 @@ const currentTargetExecutable = computed(() => {
   return ''
 })
 
-// ── Auto-Configure Runner (The Life Saver) ──
-function startAutoConfigure() {
+// ── Settings & State Loader ──
+async function loadSettingsAndState() {
+  try {
+    if (typeof GetAppSettings === 'function') {
+      const settings = await GetAppSettings()
+      if (settings && settings.rootVolumePath) {
+        rootVolumeDir.value = settings.rootVolumePath
+        form.value.newVenvLocation = `${settings.rootVolumePath}/python/custom-venv`
+      }
+    }
+  } catch (err) {
+    console.warn('Could not load app settings:', err)
+  }
+
+  try {
+    if (typeof GetPythonState === 'function') {
+      const state = await GetPythonState()
+      if (state && state.configured) {
+        isConfigured.value = true
+        pythonEnv.value = state
+        packages.value = state.packages || []
+      } else {
+        isConfigured.value = false
+        packages.value = []
+        pythonEnv.value = {
+          version: '',
+          type: '',
+          typeLabel: '',
+          envName: '',
+          executablePath: '',
+          envPrefix: '',
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('Could not load python state:', err)
+  }
+}
+
+// ── Host Scanner ──
+async function scanHost() {
+  isScanning.value = true
+  try {
+    if (typeof ScanHostPython === 'function') {
+      const discovered = await ScanHostPython()
+      if (discovered && discovered.length > 0) {
+        detectedSystemInterpreters.value = discovered.map(d => ({
+          name: `${d.version} (${d.type})`,
+          path: d.path,
+          version: d.version,
+          type: d.type
+        }))
+        if (!form.value.selectedPath && discovered[0]) {
+          form.value.selectedPath = discovered[0].path
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('Failed scanning host:', err)
+  } finally {
+    isScanning.value = false
+  }
+}
+
+// ── Auto-Configure Runner ──
+async function startAutoConfigure() {
   showAutoModal.value = true
   autoComplete.value = false
-  autoSteps.value.forEach(s => s.status = 'pending')
+  autoError.value = ''
+  autoSteps.value = [
+    { title: 'Locate stable Python 3 runtime on host', desc: 'Checking /usr/bin/python3 and system binaries', status: 'running' },
+    { title: 'Create isolated virtual environment', desc: `Target: ${targetVenvDisplay.value}`, status: 'pending' },
+    { title: 'Bootstrap pip & packaging toolchain', desc: 'Upgrading pip and setuptools to latest secure release', status: 'pending' },
+    { title: 'Install foundational Big Data packages', desc: 'duckdb, psycopg2-binary, pyarrow, pandas', status: 'pending' },
+  ]
 
-  // Step 1
-  autoSteps.value[0].status = 'running'
-  setTimeout(() => {
-    autoSteps.value[0].status = 'done'
-    autoSteps.value[1].status = 'running'
+  // Animation ticks for visual clarity while backend work is executing
+  const t1 = setTimeout(() => {
+    if (!autoComplete.value && !autoError.value) {
+      autoSteps.value[0].status = 'done'
+      autoSteps.value[1].status = 'running'
+    }
+  }, 400)
 
-    // Step 2
-    setTimeout(() => {
+  const t2 = setTimeout(() => {
+    if (!autoComplete.value && !autoError.value) {
       autoSteps.value[1].status = 'done'
       autoSteps.value[2].status = 'running'
+    }
+  }, 1200)
 
-      // Step 3
-      setTimeout(() => {
-        autoSteps.value[2].status = 'done'
-        autoSteps.value[3].status = 'running'
-
-        // Step 4
-        setTimeout(() => {
-          autoSteps.value[3].status = 'done'
-          autoComplete.value = true
-        }, 800)
-      }, 700)
-    }, 600)
-  }, 500)
+  try {
+    if (typeof AutoConfigurePython === 'function') {
+      const res = await AutoConfigurePython()
+      clearTimeout(t1)
+      clearTimeout(t2)
+      if (res && res.configured) {
+        autoSteps.value.forEach(s => s.status = 'done')
+        autoComplete.value = true
+        pythonEnv.value = res
+        packages.value = res.packages || []
+        isConfigured.value = true
+      }
+    }
+  } catch (err) {
+    clearTimeout(t1)
+    clearTimeout(t2)
+    console.error('Auto configure python failed:', err)
+    autoError.value = err?.message || String(err)
+    autoSteps.value.forEach(s => {
+      if (s.status === 'running') s.status = 'pending'
+    })
+  }
 }
 
 function finishAutoConfigure() {
-  pythonEnv.value = {
-    version: 'Python 3.10.12',
-    type: 'Virtualenv',
-    typeLabel: 'venv (deloc-env)',
-    envName: 'deloc-env',
-    executablePath: '/home/koushik/.deloc/python-env/bin/python',
-    envPrefix: '/home/koushik/.deloc/python-env',
-  }
-  isConfigured.value = true
   showAutoModal.value = false
 }
 
 // ── Manual Modal Handlers ──
 function openConfigModal() {
-  form.value.selectedPath = pythonEnv.value.executablePath
+  if (pythonEnv.value.executablePath) {
+    form.value.selectedPath = pythonEnv.value.executablePath
+  }
   showConfigModal.value = true
 }
 
-function applyManualInterpreter() {
+async function applyManualInterpreter() {
   const chosen = currentTargetExecutable.value.trim()
   if (!chosen) {
     showConfigModal.value = false
@@ -838,38 +983,124 @@ function applyManualInterpreter() {
   }
 
   let type = 'Custom'
-  let typeLabel = 'Custom'
   let envName = 'custom'
 
   if (ideTab.value === 'system') {
     type = 'System'
-    typeLabel = 'System Python'
     envName = 'system'
   } else if (ideTab.value === 'venv') {
     type = 'Virtualenv'
-    typeLabel = 'venv'
     envName = 'user-venv'
   } else if (ideTab.value === 'conda') {
     type = 'Conda'
-    typeLabel = 'Conda'
-    envName = 'conda-env'
+    envName = 'conda'
   }
 
-  pythonEnv.value = {
-    version: 'Python 3.10.12',
-    type,
-    typeLabel,
-    envName,
-    executablePath: chosen,
-    envPrefix: chosen.replace(/\/bin\/python.*$/, ''),
+  try {
+    if (typeof ConfigureManualPython === 'function') {
+      const res = await ConfigureManualPython(chosen, type, envName)
+      if (res && res.configured) {
+        pythonEnv.value = res
+        packages.value = res.packages || []
+        isConfigured.value = true
+      }
+    }
+  } catch (err) {
+    console.error('Failed to configure manual interpreter:', err)
   }
-
-  isConfigured.value = true
   showConfigModal.value = false
 }
 
-function resetEnvironment() {
-  isConfigured.value = false
+// ── Disable / Unbind Modal Handlers ──
+function openDisableModal() {
+  disableModal.value = {
+    isOpen: true,
+    deleteFiles: pythonEnv.value.type === 'Virtualenv' && Boolean(pythonEnv.value.envPrefix),
+    isLoading: false,
+    error: null
+  }
+}
+
+async function confirmDisablePython() {
+  disableModal.value.isLoading = true
+  disableModal.value.error = null
+  try {
+    if (typeof DisablePython === 'function') {
+      const res = await DisablePython(disableModal.value.deleteFiles)
+      if (res && !res.configured) {
+        isConfigured.value = false
+        packages.value = []
+        pythonEnv.value = {
+          version: '',
+          type: '',
+          typeLabel: '',
+          envName: '',
+          executablePath: '',
+          envPrefix: '',
+        }
+      }
+    } else {
+      isConfigured.value = false
+    }
+    disableModal.value.isOpen = false
+  } catch (err) {
+    console.error('Failed to disable python environment:', err)
+    disableModal.value.error = err?.message || String(err)
+  } finally {
+    disableModal.value.isLoading = false
+  }
+}
+
+// ── Package Management ──
+function isPackageInstalled(name) {
+  return packages.value.some(p => p.name.toLowerCase() === name.toLowerCase())
+}
+
+async function installPackage(name) {
+  if (isPackageInstalled(name)) return
+  isInstalling.value = true
+  installFeedback.value = ''
+  try {
+    if (typeof InstallPythonPackage === 'function') {
+      const updated = await InstallPythonPackage(name)
+      if (updated) {
+        packages.value = updated
+      }
+    } else {
+      packages.value.push({ name, version: 'installed', isCore: false })
+    }
+    installFeedback.value = `Package '${name}' installed successfully!`
+  } catch (err) {
+    console.error('Package installation error:', err)
+    installFeedback.value = `Error: ${err?.message || err}`
+  } finally {
+    isInstalling.value = false
+    setTimeout(() => {
+      installFeedback.value = ''
+    }, 3000)
+  }
+}
+
+function handleCustomInstall() {
+  const name = newPackageName.value.trim()
+  if (!name) return
+  installPackage(name)
+  newPackageName.value = ''
+}
+
+async function uninstallPackage(name) {
+  try {
+    if (typeof UninstallPythonPackage === 'function') {
+      const updated = await UninstallPythonPackage(name)
+      if (updated) {
+        packages.value = updated
+      }
+    } else {
+      packages.value = packages.value.filter(p => p.name !== name)
+    }
+  } catch (err) {
+    console.error('Failed to uninstall package:', err)
+  }
 }
 
 async function browseFolder(callback) {
@@ -905,12 +1136,37 @@ async function copyPath(text, key) {
   }
 }
 
-function scanHost() {
-  isScanning.value = true
-  setTimeout(() => {
-    isScanning.value = false
-  }, 600)
-}
+onMounted(async () => {
+  await loadSettingsAndState()
+  await scanHost()
+
+  if (typeof EventsOn === 'function') {
+    EventsOn('plugins:python:updated', (state) => {
+      if (state && state.configured) {
+        isConfigured.value = true
+        pythonEnv.value = state
+        packages.value = state.packages || []
+      } else {
+        isConfigured.value = false
+        packages.value = []
+        pythonEnv.value = {
+          version: '',
+          type: '',
+          typeLabel: '',
+          envName: '',
+          executablePath: '',
+          envPrefix: '',
+        }
+      }
+    })
+    EventsOn('settings:updated', (settings) => {
+      if (settings && settings.rootVolumePath) {
+        rootVolumeDir.value = settings.rootVolumePath
+        form.value.newVenvLocation = `${settings.rootVolumePath}/python/custom-venv`
+      }
+    })
+  }
+})
 </script>
 
 <style scoped>
